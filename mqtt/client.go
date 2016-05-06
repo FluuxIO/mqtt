@@ -122,6 +122,7 @@ func readPacket(r io.Reader) {
 	fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
 	io.ReadFull(r, payload)
+	payloadToStruct(int(packetType), payload)
 }
 
 func encodeString(str string) []byte {
@@ -154,4 +155,19 @@ func DecodeRLength(r io.Reader) (int, error) {
 	}
 
 	return int(value), err
+}
+
+func payloadToStruct(packetType int, payload []byte) {
+	switch packetType {
+	case 2:
+		decodeConnAck(payload)
+	default:
+		fmt.Println("Unsupported MQTT packet type")
+	}
+}
+
+func decodeConnAck(payload []byte) {
+	//	reserved := payload[0]
+	returnCode := payload[1]
+	fmt.Printf("Return Code: %d\n", returnCode)
 }
