@@ -118,6 +118,8 @@ func readPacket(r io.Reader) {
 	fmt.Printf("PacketType: %d\n", packetType)
 	length, _ := DecodeRLength(r)
 	fmt.Printf("Length: %d\n", length)
+	payload := make([]byte, length)
+	io.ReadFull(r, payload)
 }
 
 func encodeString(str string) []byte {
