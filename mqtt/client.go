@@ -69,6 +69,7 @@ func (c *Client) Connect() <-chan Status {
 		buf := connect()
 		buf.WriteTo(c.conn)
 
+		// TODO Check connack value before sending status to channel
 		readPacket(c.conn)
 
 		out <- Status{}
@@ -114,6 +115,7 @@ func readPacket(r io.Reader) {
 	fixedHeader := make([]byte, 1)
 	io.ReadFull(r, fixedHeader)
 	packetType := fixedHeader[0] >> 4
+	// TODO decode flags, depending on packet type
 
 	fmt.Printf("PacketType: %d\n", packetType)
 	length, _ := DecodeRLength(r)
