@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -67,6 +69,8 @@ func (c *Client) Connect() <-chan Status {
 		buf := connect()
 		buf.WriteTo(c.conn)
 
+		readPacket(c.conn)
+
 		out <- Status{}
 	}()
 
@@ -106,6 +110,16 @@ func connect() bytes.Buffer {
 	return packet
 }
 
+func readPacket(r io.Reader) {
+	fixedHeader := make([]byte, 1)
+	io.ReadFull(r, fixedHeader)
+	packetType := fixedHeader[0] >> 4
+
+	fmt.Printf("PacketType: %d\n", packetType)
+	length, _ := DecodeRLength(r)
+	fmt.Printf("Length: %d\n", length)
+}
+
 func encodeString(str string) []byte {
 	length := make([]byte, 2)
 	binary.BigEndian.PutUint16(length, uint16(len(str)))
@@ -116,4 +130,24 @@ func encodeUint16(num uint16) []byte {
 	bytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(bytes, num)
 	return bytes
+}
+
+// DecodeRLength decodes MQTT Packet remaining length field
+// Reference: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023
+func DecodeRLength(r io.Reader) (int, error) {
+	var multiplier uint32 = 1
+	var value uint32
+	var err error
+	encodedByte := make([]byte, 1)
+	for ok := true; ok; ok = (encodedByte[0]&128 != 0) {
+		io.ReadFull(r, encodedByte)
+		value += uint32(encodedByte[0]&127) * multiplier
+		multiplier *= 128
+		if multiplier > 128*128*128 {
+			err = errors.New("mqtt: malformed remaining length")
+			return 0, err
+		}
+	}
+
+	return int(value), err
 }
