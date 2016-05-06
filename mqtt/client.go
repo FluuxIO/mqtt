@@ -1,6 +1,8 @@
 package mqtt
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"net"
 	"strings"
@@ -61,6 +63,10 @@ func (c *Client) Connect() <-chan Status {
 			out <- Status{Err: err}
 			return
 		}
+		// Send connect packet
+		buf := connect()
+		buf.WriteTo(c.conn)
+
 		out <- Status{}
 	}()
 
@@ -71,4 +77,43 @@ func (c *Client) Connect() <-chan Status {
 	*/
 
 	return out
+}
+
+// Direct conversion from my Elixir implementation
+func connect() bytes.Buffer {
+	var variablePart bytes.Buffer
+	var packet bytes.Buffer
+
+	packetType := 1
+	fixedHeaderFlags := 0
+	protocolName := "MQTT"
+	protocolLevel := 4        // This is MQTT v3.1.1
+	connectFlags := 0         // TODO: support connect flag definition
+	var keepalive uint16 = 30 // TODO: make it configurable
+	variablePart.Write(encodeString(protocolName))
+	variablePart.WriteByte(byte(protocolLevel))
+	variablePart.WriteByte(byte(connectFlags))
+	variablePart.Write(encodeUint16(keepalive))
+
+	clientID := "GoMQTT"
+	variablePart.Write(encodeString(clientID))
+
+	fixedHeader := (packetType<<4 | fixedHeaderFlags)
+	packet.WriteByte(byte(fixedHeader))
+	packet.WriteByte(byte(variablePart.Len()))
+	packet.Write(variablePart.Bytes())
+
+	return packet
+}
+
+func encodeString(str string) []byte {
+	length := make([]byte, 2)
+	binary.BigEndian.PutUint16(length, uint16(len(str)))
+	return append(length, []byte(str)...)
+}
+
+func encodeUint16(num uint16) []byte {
+	bytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(bytes, num)
+	return bytes
 }
