@@ -21,11 +21,8 @@ type Status struct {
 }
 
 // NewClient generates a new XMPP client, based on Options passed as parameters.
-// If host is not specified, the  DNS SRV should be used to find the host from the domainpart of the JID.
-// Default the port to 5222.
-// TODO: better options checks
+// Default the port to 1883.
 func NewClient(options ClientOptions) (c *Client, err error) {
-	// TODO: If option address is nil, use the Jid domain to compose the address
 	if options.Address, err = checkAddress(options.Address); err != nil {
 		return
 	}
