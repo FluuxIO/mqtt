@@ -20,7 +20,7 @@ func NewConnect() *Connect {
 func Decode(packetType int, payload []byte) Marshaller {
 	switch packetType {
 	case 2:
-		return DecodeConnAck(payload)
+		return decodeConnAck(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
 		return nil

@@ -19,7 +19,7 @@ func (c *ConnAck) Marshall() bytes.Buffer {
 	return buf
 }
 
-func DecodeConnAck(payload []byte) *ConnAck {
+func decodeConnAck(payload []byte) *ConnAck {
 	connAck := new(ConnAck)
 	// MQTT 3.1.1: payload[0] is reserved for future use
 	connAck.ReturnCode = int(payload[1])
