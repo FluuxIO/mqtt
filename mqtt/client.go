@@ -157,17 +157,38 @@ func DecodeRLength(r io.Reader) (int, error) {
 	return int(value), err
 }
 
-func payloadToStruct(packetType int, payload []byte) {
+func payloadToStruct(packetType int, payload []byte) MQTTPacket {
 	switch packetType {
 	case 2:
-		decodeConnAck(payload)
+		return decodeConnAck(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
+		return new(Unknown)
 	}
 }
 
-func decodeConnAck(payload []byte) {
-	//	reserved := payload[0]
-	returnCode := payload[1]
-	fmt.Printf("Return Code: %d\n", returnCode)
+type MQTTPacket interface {
+	PacketType() int
+}
+
+type ConnAck struct {
+	ReturnCode int
+}
+
+func (c *ConnAck) PacketType() int {
+	return 2
+}
+
+type Unknown struct{}
+
+func (u *Unknown) PacketType() int {
+	return -1
+}
+
+func decodeConnAck(payload []byte) *ConnAck {
+	connAck := new(ConnAck)
+	// MQTT 3.1.1: payload[0] is reserved for future use
+	connAck.ReturnCode = int(payload[1])
+	fmt.Printf("Return Code: %d\n", connAck.ReturnCode)
+	return connAck
 }
