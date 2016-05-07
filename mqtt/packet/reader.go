@@ -1,14 +1,13 @@
-package mqtt
+package packet
 
 import (
 	"errors"
 	"fmt"
 	"io"
-
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
-func readPacket(r io.Reader) {
+// Read returns unmarshalled packet from io.Reader stream
+func Read(r io.Reader) Marshaller {
 	fixedHeader := make([]byte, 1)
 	io.ReadFull(r, fixedHeader)
 	packetType := fixedHeader[0] >> 4
@@ -19,7 +18,7 @@ func readPacket(r io.Reader) {
 	fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
 	io.ReadFull(r, payload)
-	packet.Decode(int(packetType), payload)
+	return Decode(int(packetType), payload)
 }
 
 // ReadRemainingLength decodes MQTT Packet remaining length field

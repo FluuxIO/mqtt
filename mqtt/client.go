@@ -68,7 +68,7 @@ func (c *Client) Connect() <-chan Status {
 		buf.WriteTo(c.conn)
 
 		// TODO Check connack value before sending status to channel
-		readPacket(c.conn)
+		packet.Read(c.conn)
 
 		// TODO Go routine to receive incoming data
 

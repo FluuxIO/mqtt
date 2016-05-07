@@ -13,7 +13,6 @@ func (c *ConnAck) PacketType() int {
 	return 2
 }
 
-// TODO Not yet implemented
 func (c *ConnAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

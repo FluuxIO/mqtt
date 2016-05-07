@@ -17,12 +17,19 @@ type Marshaller interface {
 	PacketType() int
 }
 
+// NewConnect creates a CONNECT packet with default values
 func NewConnect() *Connect {
 	connect := new(Connect)
 	connect.keepalive = 30
 	return connect
 }
 
+// NewConnAck creates a CONNACK packet with default values
+func NewConnAck() *ConnAck {
+	return new(ConnAck)
+}
+
+// Decode returns parsed struct from byte array
 func Decode(packetType int, payload []byte) Marshaller {
 	switch packetType {
 	case connackType:
