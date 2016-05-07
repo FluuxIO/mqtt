@@ -1,9 +1,20 @@
 // Direct conversion from my Elixir implementation
-package mqtt
+package packet
 
 import "bytes"
 
-func connect() bytes.Buffer {
+// Connect MQTT 3.1.1 control packet
+type Connect struct {
+	keepalive int
+	clientID  string
+}
+
+func (c *Connect) PacketType() int {
+	return 1
+}
+
+// Marshall return buffer containing serialized CONNECT MQTT control packet
+func (c *Connect) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 

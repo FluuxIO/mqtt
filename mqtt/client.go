@@ -1,13 +1,14 @@
 package mqtt
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 // Client is the main structure use to connect as a client on an MQTT
@@ -65,7 +66,7 @@ func (c *Client) Connect() <-chan Status {
 			return
 		}
 		// Send connect packet
-		buf := connect()
+		buf := packet.NewConnect().Marshall()
 		buf.WriteTo(c.conn)
 
 		// TODO Check connack value before sending status to channel
@@ -99,18 +100,6 @@ func readPacket(r io.Reader) {
 	payloadToStruct(int(packetType), payload)
 }
 
-func encodeString(str string) []byte {
-	length := make([]byte, 2)
-	binary.BigEndian.PutUint16(length, uint16(len(str)))
-	return append(length, []byte(str)...)
-}
-
-func encodeUint16(num uint16) []byte {
-	bytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(bytes, num)
-	return bytes
-}
-
 // ReadRemainingLength decodes MQTT Packet remaining length field
 // Reference: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023
 func ReadRemainingLength(r io.Reader) (int, error) {
@@ -131,10 +120,10 @@ func ReadRemainingLength(r io.Reader) (int, error) {
 	return int(value), err
 }
 
-func payloadToStruct(packetType int, payload []byte) Packet {
+func payloadToStruct(packetType int, payload []byte) packet.Marshaller {
 	switch packetType {
 	case 2:
-		return decodeConnAck(payload)
+		return packet.DecodeConnAck(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
 		return nil
