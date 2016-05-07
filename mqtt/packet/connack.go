@@ -15,8 +15,20 @@ func (c *ConnAck) PacketType() int {
 
 // TODO Not yet implemented
 func (c *ConnAck) Marshall() bytes.Buffer {
-	var buf bytes.Buffer
-	return buf
+	var variablePart bytes.Buffer
+	var packet bytes.Buffer
+
+	reserved := 0
+
+	variablePart.WriteByte(byte(reserved))
+	variablePart.WriteByte(byte(c.ReturnCode))
+
+	fixedHeader := (connackType<<4 | fixedHeaderFlags)
+	packet.WriteByte(byte(fixedHeader))
+	packet.WriteByte(byte(variablePart.Len()))
+	packet.Write(variablePart.Bytes())
+
+	return packet
 }
 
 func decodeConnAck(payload []byte) *ConnAck {

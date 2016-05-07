@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+const (
+	reserved1Type = iota
+	connectType   = iota
+	connackType   = iota
+)
+
 // Packet interface shared by all MQTT control packets
 type Marshaller interface {
 	Marshall() bytes.Buffer
@@ -19,7 +25,7 @@ func NewConnect() *Connect {
 
 func Decode(packetType int, payload []byte) Marshaller {
 	switch packetType {
-	case 2:
+	case connackType:
 		return decodeConnAck(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")

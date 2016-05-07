@@ -4,7 +4,6 @@ package packet
 import "bytes"
 
 const (
-	packetType       = 1
 	fixedHeaderFlags = 0
 	protocolName     = "MQTT"
 	protocolLevel    = 4 // This is MQTT v3.1.1
@@ -19,7 +18,7 @@ type Connect struct {
 
 // PacketType return packet type numerical value
 func (c *Connect) PacketType() int {
-	return packetType
+	return connectType
 }
 
 // Marshall return buffer containing serialized CONNECT MQTT control packet
@@ -36,7 +35,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	variablePart.Write(encodeUint16(keepalive))
 	variablePart.Write(encodeString(clientID))
 
-	fixedHeader := (packetType<<4 | fixedHeaderFlags)
+	fixedHeader := (connectType<<4 | fixedHeaderFlags)
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
