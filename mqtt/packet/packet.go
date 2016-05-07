@@ -11,10 +11,10 @@ type Marshaller interface {
 	PacketType() int
 }
 
-// TODO interface should be packet.Marshaller ?
-
 func NewConnect() *Connect {
-	return new(Connect)
+	connect := new(Connect)
+	connect.keepalive = 30
+	return connect
 }
 
 func Decode(packetType int, payload []byte) Marshaller {
