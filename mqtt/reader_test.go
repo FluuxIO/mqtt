@@ -5,25 +5,16 @@ import (
 	"testing"
 )
 
-func TestDecodeRLength(t *testing.T) {
-	buf := bytes.NewBuffer(nil)
-	buf.WriteByte(0)
+func TestReadRemainingLength(t *testing.T) {
+	bufferCheck([]byte{0}, 0, t)
+	bufferCheck([]byte{64}, 64, t)
+	bufferCheck([]byte{193, 2}, 321, t)
+}
+
+func bufferCheck(input []byte, expected int, t *testing.T) {
+	buf := bytes.NewBuffer(input)
 	l, _ := readRemainingLength(buf)
-	if l != 0 {
-		t.Error("incorrect remaining length")
-	}
-
-	buf = bytes.NewBuffer(nil)
-	buf.WriteByte(64)
-	l, _ = readRemainingLength(buf)
-	if l != 64 {
-		t.Error("incorrect remaining length")
-	}
-
-	buf = bytes.NewBuffer(nil)
-	buf.Write([]byte{193, 2})
-	l, _ = readRemainingLength(buf)
-	if l != 321 {
-		t.Error("incorrect remaining length")
+	if l != expected {
+		t.Errorf("incorrect remaining length (%d) = %d", l, expected)
 	}
 }
