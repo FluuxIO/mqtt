@@ -1,7 +1,6 @@
 package mqtt
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -72,6 +71,8 @@ func (c *Client) Connect() <-chan Status {
 		// TODO Check connack value before sending status to channel
 		readPacket(c.conn)
 
+		// TODO Go routine to receive incoming data
+
 		out <- Status{}
 	}()
 
@@ -84,33 +85,6 @@ func (c *Client) Connect() <-chan Status {
 	return out
 }
 
-// Direct conversion from my Elixir implementation
-func connect() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	packetType := 1
-	fixedHeaderFlags := 0
-	protocolName := "MQTT"
-	protocolLevel := 4        // This is MQTT v3.1.1
-	connectFlags := 0         // TODO: support connect flag definition
-	var keepalive uint16 = 30 // TODO: make it configurable
-	variablePart.Write(encodeString(protocolName))
-	variablePart.WriteByte(byte(protocolLevel))
-	variablePart.WriteByte(byte(connectFlags))
-	variablePart.Write(encodeUint16(keepalive))
-
-	clientID := "GoMQTT"
-	variablePart.Write(encodeString(clientID))
-
-	fixedHeader := (packetType<<4 | fixedHeaderFlags)
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func readPacket(r io.Reader) {
 	fixedHeader := make([]byte, 1)
 	io.ReadFull(r, fixedHeader)
@@ -118,7 +92,7 @@ func readPacket(r io.Reader) {
 	// TODO decode flags, depending on packet type
 
 	fmt.Printf("PacketType: %d\n", packetType)
-	length, _ := DecodeRLength(r)
+	length, _ := ReadRemainingLength(r)
 	fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
 	io.ReadFull(r, payload)
@@ -137,9 +111,9 @@ func encodeUint16(num uint16) []byte {
 	return bytes
 }
 
-// DecodeRLength decodes MQTT Packet remaining length field
+// ReadRemainingLength decodes MQTT Packet remaining length field
 // Reference: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718023
-func DecodeRLength(r io.Reader) (int, error) {
+func ReadRemainingLength(r io.Reader) (int, error) {
 	var multiplier uint32 = 1
 	var value uint32
 	var err error
@@ -157,38 +131,21 @@ func DecodeRLength(r io.Reader) (int, error) {
 	return int(value), err
 }
 
-func payloadToStruct(packetType int, payload []byte) MQTTPacket {
+func payloadToStruct(packetType int, payload []byte) Packet {
 	switch packetType {
 	case 2:
 		return decodeConnAck(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
-		return new(Unknown)
+		return nil
 	}
 }
 
-type MQTTPacket interface {
-	PacketType() int
+/* TODO refactor to be able to test that way:
+func test() {
+	cp = packet.NewConnect()
+	cp.usernmane = "mickael"
+	buf, err = cp.Marshal()
+	cp = packet.Read(buf)
 }
-
-type ConnAck struct {
-	ReturnCode int
-}
-
-func (c *ConnAck) PacketType() int {
-	return 2
-}
-
-type Unknown struct{}
-
-func (u *Unknown) PacketType() int {
-	return -1
-}
-
-func decodeConnAck(payload []byte) *ConnAck {
-	connAck := new(ConnAck)
-	// MQTT 3.1.1: payload[0] is reserved for future use
-	connAck.ReturnCode = int(payload[1])
-	fmt.Printf("Return Code: %d\n", connAck.ReturnCode)
-	return connAck
-}
+*/
