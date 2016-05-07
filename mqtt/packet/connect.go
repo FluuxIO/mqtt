@@ -3,14 +3,17 @@ package packet
 
 import "bytes"
 
+const connectType = 1
+
 // Connect MQTT 3.1.1 control packet
 type Connect struct {
 	keepalive int
 	clientID  string
 }
 
+// PacketType return packet type numerical value
 func (c *Connect) PacketType() int {
-	return 1
+	return connectType
 }
 
 // Marshall return buffer containing serialized CONNECT MQTT control packet
@@ -18,7 +21,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
-	packetType := 1
+	packetType := connectType
 	fixedHeaderFlags := 0
 	protocolName := "MQTT"
 	protocolLevel := 4        // This is MQTT v3.1.1
