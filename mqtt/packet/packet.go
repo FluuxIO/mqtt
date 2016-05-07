@@ -1,6 +1,9 @@
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Packet interface shared by all MQTT control packets
 type Marshaller interface {
@@ -12,4 +15,14 @@ type Marshaller interface {
 
 func NewConnect() *Connect {
 	return new(Connect)
+}
+
+func Decode(packetType int, payload []byte) Marshaller {
+	switch packetType {
+	case 2:
+		return DecodeConnAck(payload)
+	default:
+		fmt.Println("Unsupported MQTT packet type")
+		return nil
+	}
 }
