@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -93,7 +94,16 @@ func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
 	subscribe.AddTopic(topic)
 	buf := subscribe.Marshall()
+	c.send(&buf)
+}
+
+func (c *Client) send(buf *bytes.Buffer) {
 	buf.WriteTo(c.conn)
+	c.resetTimer()
+}
+
+func (c *Client) resetTimer() {
+	c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
 }
 
 // TODO Send back packet to client through channel
@@ -115,7 +125,7 @@ func pinger(c *Client) {
 		pingReq := packet.NewPingReq()
 		buf := pingReq.Marshall()
 		buf.WriteTo(c.conn)
-		c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+		c.resetTimer()
 	}
 }
 
