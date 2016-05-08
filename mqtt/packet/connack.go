@@ -10,7 +10,7 @@ type ConnAck struct {
 }
 
 func (c *ConnAck) PacketType() int {
-	return 2
+	return connackType
 }
 
 func (c *ConnAck) Marshall() bytes.Buffer {
