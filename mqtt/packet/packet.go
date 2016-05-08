@@ -63,6 +63,10 @@ func Decode(packetType int, payload []byte) Marshaller {
 	switch packetType {
 	case connackType:
 		return decodeConnAck(payload)
+	case subscribeType:
+		return decodeSubscribe(payload)
+	case subackType:
+		return decodeSubAck(payload)
 	case pingreqType:
 		return decodePingReq(payload)
 	case pingrespType:
