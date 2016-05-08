@@ -50,31 +50,3 @@ func decodeSubscribe(payload []byte) *Subscribe {
 	subscribe := new(Subscribe)
 	return subscribe
 }
-
-/*
-  defstruct id: 0, qos: 0, topics: []
-
-  def encode(%MQTT.Packet.Subscribe{topics: []}) do
-    {:error, :empty_topics}
-  end
-
-  def encode(packet) do
-    fixed_header_flag = 2
-    variable_header = << packet.id :: size(16) >>
-
-    qos = << packet.qos :: size(8) >>
-    topics = packet.topics
-             |> Enum.reduce(<<>>, fn(topic, acc) -> acc <> encode_string(topic) <> qos end)
-
-    variable_part = variable_header <> topics
-
-    remaining_size = remaining_length(byte_size(variable_part))
-
-    fixed_header = << @mqtt_type :: size(4),  fixed_header_flag :: size(4)>> <> remaining_size
-    fixed_header <> variable_part
-  end
-
-  def decode(_hflag, _rest) do
-    %MQTT.Packet.Subscribe{}
-  end
-*/
