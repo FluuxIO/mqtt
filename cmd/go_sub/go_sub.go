@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/processone/gomqtt/mqtt"
+	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 func main() {
@@ -12,5 +13,7 @@ func main() {
 	client, _ := mqtt.NewClient(options)
 	statusChan := client.Connect()
 	<-statusChan
+	topic := packet.Topic{Name: "test/topic"}
+	client.Subscribe(topic)
 	<-statusChan
 }

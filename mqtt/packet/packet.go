@@ -41,6 +41,12 @@ func NewConnAck() *ConnAck {
 	return new(ConnAck)
 }
 
+// NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
+// least one topic to create a valid subscribe packet.
+func NewSubscribe() *Subscribe {
+	return new(Subscribe)
+}
+
 // NewPingReq creates a PINGREQ packet
 func NewPingReq() *PingReq {
 	return new(PingReq)

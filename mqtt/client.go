@@ -88,6 +88,14 @@ func (c *Client) Connect() <-chan Status {
 	return c.status
 }
 
+// FIXME packet.Topic does not seem a good name
+func (c *Client) Subscribe(topic packet.Topic) {
+	subscribe := packet.NewSubscribe()
+	subscribe.AddTopic(topic)
+	buf := subscribe.Marshall()
+	buf.WriteTo(c.conn)
+}
+
 // TODO Send back packet to client through channel
 func receive(c *Client) {
 	var p packet.Marshaller
