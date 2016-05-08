@@ -7,7 +7,8 @@ import (
 )
 
 // Read returns unmarshalled packet from io.Reader stream
-func Read(r io.Reader) Marshaller {
+func Read(r io.Reader) (Marshaller, error) {
+	var err error
 	fixedHeader := make([]byte, 1)
 	io.ReadFull(r, fixedHeader)
 	packetType := fixedHeader[0] >> 4
@@ -17,8 +18,10 @@ func Read(r io.Reader) Marshaller {
 	length, _ := readRemainingLength(r)
 	fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
-	io.ReadFull(r, payload)
-	return Decode(int(packetType), payload)
+	if _, err = io.ReadFull(r, payload); err != nil {
+		return nil, err
+	}
+	return Decode(int(packetType), payload), err
 }
 
 // ReadRemainingLength decodes MQTT Packet remaining length field

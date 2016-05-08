@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -15,7 +16,8 @@ type Client struct {
 	// Store user defined options
 	options ClientOptions
 	// TCP level connection / can be replace by a TLS session after starttls
-	conn net.Conn
+	conn   net.Conn
+	status chan Status
 }
 
 type Status struct {
@@ -54,13 +56,13 @@ func checkAddress(addr string) (string, error) {
 
 // Connect initiates asynchronous connection to MQTT server
 func (c *Client) Connect() <-chan Status {
-	out := make(chan Status)
+	c.status = make(chan Status)
 
 	go func() {
 		var err error
 		c.conn, err = net.DialTimeout("tcp", c.options.Address, 5*time.Second)
 		if err != nil {
-			out <- Status{Err: err}
+			c.status <- Status{Err: err}
 			return
 		}
 		// Send connect packet
@@ -69,19 +71,26 @@ func (c *Client) Connect() <-chan Status {
 
 		// TODO Check connack value before sending status to channel
 		packet.Read(c.conn)
+		c.status <- Status{}
 
-		// TODO Go routine to receive incoming data
-
-		out <- Status{}
+		// Go routine to receive incoming data
+		go receive(c)
 	}()
 
-	// Connection is ok, we now open MQTT session
-	/*	if c.conn, c.Session, err = NewSession(c.conn, c.options); err != nil {
-			return err
-		}
-	*/
+	return c.status
+}
 
-	return out
+// TODO Send back packet to client through channel
+func receive(c *Client) {
+	var p packet.Marshaller
+	var err error
+	for {
+		if p, err = packet.Read(c.conn); err != nil {
+			fmt.Printf("packet read error: %q\n", err)
+			break
+		}
+		fmt.Printf("Received: %+v\n", p)
+	}
 }
 
 /* TODO refactor to be able to test that way:

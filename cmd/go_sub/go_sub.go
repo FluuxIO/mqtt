@@ -12,4 +12,5 @@ func main() {
 	client, _ := mqtt.NewClient(options)
 	statusChan := client.Connect()
 	<-statusChan
+	<-statusChan
 }
