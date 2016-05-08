@@ -31,6 +31,7 @@ func NewConnAck() *ConnAck {
 
 // Decode returns parsed struct from byte array
 func Decode(packetType int, payload []byte) Marshaller {
+	fmt.Printf("Decoding packet type: %d\n", packetType)
 	switch packetType {
 	case connackType:
 		return decodeConnAck(payload)

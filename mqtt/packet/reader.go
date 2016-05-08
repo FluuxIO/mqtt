@@ -10,7 +10,14 @@ import (
 func Read(r io.Reader) (Marshaller, error) {
 	var err error
 	fixedHeader := make([]byte, 1)
-	io.ReadFull(r, fixedHeader)
+
+	if _, err = io.ReadFull(r, fixedHeader); err != nil {
+		if err == io.EOF {
+			fmt.Printf("Connection closed\n")
+		}
+		return nil, err
+	}
+
 	packetType := fixedHeader[0] >> 4
 	// TODO decode flags, depending on packet type
 
@@ -19,6 +26,9 @@ func Read(r io.Reader) (Marshaller, error) {
 	fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
 	if _, err = io.ReadFull(r, payload); err != nil {
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			fmt.Printf("Connection closed unexpectedly\n")
+		}
 		return nil, err
 	}
 	return Decode(int(packetType), payload), err
