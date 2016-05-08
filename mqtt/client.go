@@ -107,6 +107,7 @@ func pinger(c *Client) {
 		pingReq := packet.NewPingReq()
 		buf := pingReq.Marshall()
 		buf.WriteTo(c.conn)
+		c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
 	}
 }
 

@@ -41,9 +41,14 @@ func NewConnAck() *ConnAck {
 	return new(ConnAck)
 }
 
-// NewPing creates a PINGREQ packet
+// NewPingReq creates a PINGREQ packet
 func NewPingReq() *PingReq {
 	return new(PingReq)
+}
+
+// NewPingResp creates a PINGRESP packet
+func NewPingResp() *PingResp {
+	return new(PingResp)
 }
 
 // Decode returns parsed struct from byte array
@@ -54,6 +59,8 @@ func Decode(packetType int, payload []byte) Marshaller {
 		return decodeConnAck(payload)
 	case pingreqType:
 		return decodePingReq(payload)
+	case pingrespType:
+		return decodePingResp(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
 		return nil
