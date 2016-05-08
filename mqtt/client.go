@@ -16,8 +16,9 @@ type Client struct {
 	// Store user defined options
 	options ClientOptions
 	// TCP level connection / can be replace by a TLS session after starttls
-	conn   net.Conn
-	status chan Status
+	conn      net.Conn
+	status    chan Status
+	pingTimer *time.Timer
 }
 
 type Status struct {
@@ -67,14 +68,20 @@ func (c *Client) Connect() <-chan Status {
 			return
 		}
 		// Send connect packet
-		buf := packet.NewConnect().Marshall()
+		connectPacket := packet.NewConnect()
+		connectPacket.SetKeepalive(c.options.Keepalive)
+		buf := connectPacket.Marshall()
 		buf.WriteTo(c.conn)
 
 		// TODO Check connack value before sending status to channel
 		packet.Read(c.conn)
 		c.status <- Status{}
 
-		// Go routine to receive incoming data
+		// TODO create ping go routine trigger by keepalive timer
+		c.pingTimer = time.NewTimer(time.Duration(c.options.Keepalive) * time.Second)
+		go pinger(c)
+
+		// Status routine to receive incoming data
 		go receive(c)
 	}()
 
@@ -91,6 +98,15 @@ func receive(c *Client) {
 			break
 		}
 		fmt.Printf("Received: %+v\n", p)
+	}
+}
+
+func pinger(c *Client) {
+	for {
+		<-c.pingTimer.C
+		pingReq := packet.NewPingReq()
+		buf := pingReq.Marshall()
+		buf.WriteTo(c.conn)
 	}
 }
 

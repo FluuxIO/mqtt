@@ -21,6 +21,10 @@ func (c *Connect) PacketType() int {
 	return connectType
 }
 
+func (c *Connect) SetKeepalive(keepalive int) {
+	c.keepalive = keepalive
+}
+
 // Marshall return buffer containing serialized CONNECT MQTT control packet
 func (c *Connect) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
