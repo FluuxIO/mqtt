@@ -89,6 +89,7 @@ func (c *Client) Connect() <-chan Status {
 	return c.status
 }
 
+// TODO Serialize packet send into its own channel / go routine
 // FIXME packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
