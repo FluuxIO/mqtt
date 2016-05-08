@@ -21,7 +21,8 @@ type Client struct {
 }
 
 type Status struct {
-	Err error
+	Packet packet.Marshaller
+	Err    error
 }
 
 // NewClient generates a new XMPP client, based on Options passed as parameters.
