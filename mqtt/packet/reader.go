@@ -19,7 +19,7 @@ func Read(r io.Reader) (Marshaller, error) {
 	}
 
 	packetType := fixedHeader[0] >> 4
-	// TODO decode flags, depending on packet type
+	fixedHeaderFlags := fixedHeader[0] & 15 // keep only last 4 bits
 
 	fmt.Printf("PacketType: %d\n", packetType)
 	length, _ := readRemainingLength(r)
@@ -31,7 +31,7 @@ func Read(r io.Reader) (Marshaller, error) {
 		}
 		return nil, err
 	}
-	return Decode(int(packetType), payload), err
+	return Decode(int(packetType), int(fixedHeaderFlags), payload), err
 }
 
 // ReadRemainingLength decodes MQTT Packet remaining length field

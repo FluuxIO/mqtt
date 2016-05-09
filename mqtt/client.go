@@ -112,7 +112,7 @@ func (c *Client) resetTimer() {
 	c.pingTimerCtl <- timerReset
 }
 
-// TODO Send back packet to client through channel
+// Receive, decode and dispatch messages to Status channel
 func receive(c *Client) {
 	var p packet.Marshaller
 	var err error
@@ -122,6 +122,7 @@ func receive(c *Client) {
 			break
 		}
 		fmt.Printf("Received: %+v\n", p)
+		c.status <- Status{Packet: p}
 	}
 }
 

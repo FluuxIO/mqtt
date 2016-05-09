@@ -58,11 +58,13 @@ func NewPingResp() *PingResp {
 }
 
 // Decode returns parsed struct from byte array
-func Decode(packetType int, payload []byte) Marshaller {
+func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	fmt.Printf("Decoding packet type: %d\n", packetType)
 	switch packetType {
 	case connackType:
 		return decodeConnAck(payload)
+	case publishType:
+		return decodePublish(fixedHeaderFlags, payload)
 	case subscribeType:
 		return decodeSubscribe(payload)
 	case subackType:
