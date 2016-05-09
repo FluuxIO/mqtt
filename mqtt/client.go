@@ -11,15 +11,20 @@ import (
 	"github.com/processone/gomqtt/mqtt/packet"
 )
 
+const (
+	timerReset = 0
+)
+
 // Client is the main structure use to connect as a client on an MQTT
 // server.
 type Client struct {
 	// Store user defined options
 	options ClientOptions
 	// TCP level connection / can be replace by a TLS session after starttls
-	conn      net.Conn
-	status    chan Status
-	pingTimer *time.Timer
+	conn         net.Conn
+	status       chan Status
+	pingTimer    *time.Timer
+	pingTimerCtl chan int
 }
 
 type Status struct {
@@ -60,6 +65,7 @@ func checkAddress(addr string) (string, error) {
 // Connect initiates asynchronous connection to MQTT server
 func (c *Client) Connect() <-chan Status {
 	c.status = make(chan Status)
+	c.pingTimerCtl = make(chan int)
 
 	go func() {
 		var err error
@@ -78,8 +84,7 @@ func (c *Client) Connect() <-chan Status {
 		packet.Read(c.conn)
 		c.status <- Status{}
 
-		// TODO create ping go routine trigger by keepalive timer
-		c.pingTimer = time.NewTimer(time.Duration(c.options.Keepalive) * time.Second)
+		// Ping go routine to manage keepalive timer
 		go pinger(c)
 
 		// Status routine to receive incoming data
@@ -104,7 +109,7 @@ func (c *Client) send(buf *bytes.Buffer) {
 }
 
 func (c *Client) resetTimer() {
-	c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+	c.pingTimerCtl <- timerReset
 }
 
 // TODO Send back packet to client through channel
@@ -120,13 +125,24 @@ func receive(c *Client) {
 	}
 }
 
+// TODO Move to another source file
 func pinger(c *Client) {
+	c.pingTimer = time.NewTimer(time.Duration(c.options.Keepalive) * time.Second)
 	for {
-		<-c.pingTimer.C
-		pingReq := packet.NewPingReq()
-		buf := pingReq.Marshall()
-		buf.WriteTo(c.conn)
-		c.resetTimer()
+		select {
+		case <-c.pingTimer.C:
+			pingReq := packet.NewPingReq()
+			buf := pingReq.Marshall()
+			buf.WriteTo(c.conn)
+			c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+		case msg := <-c.pingTimerCtl:
+			switch msg {
+			case timerReset:
+				c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+			default:
+			}
+		}
+
 	}
 }
 
