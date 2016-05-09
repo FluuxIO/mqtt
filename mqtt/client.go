@@ -122,7 +122,10 @@ func receive(c *Client) {
 			break
 		}
 		fmt.Printf("Received: %+v\n", p)
-		c.status <- Status{Packet: p}
+		// For now, only broadcast publish packets back to client
+		if p.PacketType() == 3 { // TODO refactor not to hardcode that value
+			c.status <- Status{Packet: p}
+		}
 	}
 }
 
