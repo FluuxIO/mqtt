@@ -41,6 +41,12 @@ func NewConnAck() *ConnAck {
 	return new(ConnAck)
 }
 
+// NewPublish creates an empty PUBLISH packet with default value.
+// You need at least to set a topic to make a valid packet.
+func NewPublish() *Publish {
+	return new(Publish)
+}
+
 // NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
 // least one topic to create a valid subscribe packet.
 func NewSubscribe() *Subscribe {

@@ -26,8 +26,7 @@ func (p *Publish) Marshall() bytes.Buffer {
 	if p.qos == 1 || p.qos == 2 {
 		variablePart.Write(encodeUint16(uint16(p.id)))
 	}
-	// TODO empty payload is valid
-	variablePart.Write(encodeString(p.payload))
+	variablePart.Write([]byte(p.payload))
 
 	fixedHeader := (publishType<<4 | bool2int(p.dup)<<3 | p.qos<<1 | bool2int(p.retain))
 	packet.WriteByte(byte(fixedHeader))
@@ -39,7 +38,7 @@ func (p *Publish) Marshall() bytes.Buffer {
 
 // Write unit test on decode / Marshall to check possible mistake in conversion
 func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
-	publish := new(Publish)
+	publish := NewPublish()
 	publish.dup = int2bool(fixedHeaderFlags >> 3)
 	publish.qos = int((fixedHeaderFlags & 6) >> 1)
 	publish.retain = int2bool((fixedHeaderFlags & 1))
@@ -48,8 +47,9 @@ func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 	var index int
 	if len(rest) > 0 {
 		if publish.qos == 1 || publish.qos == 2 {
-			publish.id = int(rest[0])
-			index = 1
+			offset := 2
+			publish.id = int(binary.BigEndian.Uint16(rest[:offset]))
+			index = offset
 		}
 		if len(rest) > index {
 			publish.payload = string(rest[index:])
