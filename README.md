@@ -7,3 +7,9 @@ The library is inspired by my Go XMPP library (gox) and tries to use similar con
 The library has been tested with the following MQTT servers:
 
 - Mosquitto
+
+## Running tests
+
+You can launch unit tests with:
+
+    go test ./...
