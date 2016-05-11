@@ -47,6 +47,13 @@ func NewPublish() *Publish {
 	return new(Publish)
 }
 
+// NewPubAck creates a valid PUBACK packet with id
+func NewPubAck(id int) *PubAck {
+	puback := new(PubAck)
+	puback.id = id
+	return puback
+}
+
 // NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
 // least one topic to create a valid subscribe packet.
 func NewSubscribe() *Subscribe {
@@ -71,6 +78,8 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 		return decodeConnAck(payload)
 	case publishType:
 		return decodePublish(fixedHeaderFlags, payload)
+	case pubackType:
+		return decodePubAck(payload)
 	case subscribeType:
 		return decodeSubscribe(payload)
 	case subackType:

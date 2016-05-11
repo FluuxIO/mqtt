@@ -19,7 +19,7 @@ func main() {
 		return
 	}
 
-	topic := packet.Topic{Name: "test/topic"}
+	topic := packet.Topic{Name: "test/topic", Qos: 1}
 	client.Subscribe(topic)
 
 	for {

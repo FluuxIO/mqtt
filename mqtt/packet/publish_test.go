@@ -1,15 +1,18 @@
 package packet
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestPublishDecode(t *testing.T) {
 	publish := NewPublish()
-	publish.id = 1
-	publish.dup = false
-	publish.qos = 1
-	publish.retain = false
-	publish.topic = "test/1"
-	publish.payload = "Hi"
+	publish.ID = 1
+	publish.Dup = false
+	publish.Qos = 1
+	publish.Retain = false
+	publish.Topic = "test/1"
+	publish.Payload = []byte("Hi")
 
 	buf := publish.Marshall()
 	if packet, err := Read(&buf); err != nil {
@@ -17,23 +20,23 @@ func TestPublishDecode(t *testing.T) {
 	} else {
 		switch p := packet.(type) {
 		case *Publish:
-			if p.dup != publish.dup {
-				t.Errorf("incorrect dup flag (%t) = %t", p.dup, publish.dup)
+			if p.Dup != publish.Dup {
+				t.Errorf("incorrect dup flag (%t) = %t", p.Dup, publish.Dup)
 			}
-			if p.qos != publish.qos {
-				t.Errorf("incorrect qos flag (%d) = %d", p.qos, publish.qos)
+			if p.Qos != publish.Qos {
+				t.Errorf("incorrect qos flag (%d) = %d", p.Qos, publish.Qos)
 			}
-			if p.retain != publish.retain {
-				t.Errorf("incorrect retain flag (%t) = %t", p.retain, publish.retain)
+			if p.Retain != publish.Retain {
+				t.Errorf("incorrect retain flag (%t) = %t", p.Retain, publish.Retain)
 			}
-			if p.topic != publish.topic {
-				t.Errorf("incorrect topic (%q) = %q", p.topic, publish.topic)
+			if p.Topic != publish.Topic {
+				t.Errorf("incorrect topic (%q) = %q", p.Topic, publish.Topic)
 			}
-			if p.id != publish.id {
-				t.Errorf("incorrect id (%d) = %d", p.id, publish.id)
+			if p.ID != publish.ID {
+				t.Errorf("incorrect id (%d) = %d", p.ID, publish.ID)
 			}
-			if p.payload != publish.payload {
-				t.Errorf("incorrect payload (%q) = %q", p.payload, publish.payload)
+			if bytes.Compare(p.Payload, publish.Payload) != 0 {
+				t.Errorf("incorrect payload (%q) = %q", p.Payload, publish.Payload)
 			}
 
 		default:

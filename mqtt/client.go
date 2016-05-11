@@ -88,7 +88,7 @@ func (c *Client) Connect() <-chan Status {
 		go pinger(c)
 
 		// Status routine to receive incoming data
-		go receive(c)
+		go receiver(c)
 	}()
 
 	return c.status
@@ -121,7 +121,7 @@ func (c *Client) resetTimer() {
 }
 
 // Receive, decode and dispatch messages to Status channel
-func receive(c *Client) {
+func receiver(c *Client) {
 	var p packet.Marshaller
 	var err error
 	for {
@@ -130,6 +130,7 @@ func receive(c *Client) {
 			break
 		}
 		fmt.Printf("Received: %+v\n", p)
+		sendAck(c, p)
 		// For now, only broadcast publish packets back to client
 		if p.PacketType() == 3 { // TODO refactor not to hardcode that value
 			c.status <- Status{Packet: p}
@@ -154,6 +155,17 @@ func pinger(c *Client) {
 			default:
 			}
 		}
+	}
+}
 
+// Send acks if needed, depending on packet QOS
+func sendAck(c *Client, pkt packet.Marshaller) {
+	switch p := pkt.(type) {
+	case *packet.Publish:
+		if p.Qos == 1 {
+			puback := packet.NewPubAck(p.ID)
+			buf := puback.Marshall()
+			c.send(&buf)
+		}
 	}
 }

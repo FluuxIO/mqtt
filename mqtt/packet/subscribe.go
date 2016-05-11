@@ -9,7 +9,7 @@ type Subscribe struct {
 
 type Topic struct {
 	Name string
-	qos  int
+	Qos  int
 }
 
 func (s *Subscribe) AddTopic(topic Topic) {
@@ -34,7 +34,7 @@ func (s *Subscribe) Marshall() bytes.Buffer {
 	for _, topic := range s.topics {
 		variablePart.Write(encodeString(topic.Name))
 		// TODO Check that QOS is valid
-		variablePart.WriteByte(byte(topic.qos))
+		variablePart.WriteByte(byte(topic.Qos))
 	}
 
 	fixedHeaderFlags := 2 // mandatory value

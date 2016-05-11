@@ -6,20 +6,20 @@ import (
 )
 
 type Publish struct {
-	id      int
-	dup     bool
-	qos     int
-	retain  bool
-	topic   string
-	payload []byte
+	ID      int
+	Dup     bool
+	Qos     int
+	Retain  bool
+	Topic   string
+	Payload []byte
 }
 
 func (p *Publish) SetTopic(topic string) {
-	p.topic = topic
+	p.Topic = topic
 }
 
 func (p *Publish) SetPayload(payload []byte) {
-	p.payload = payload
+	p.Payload = payload
 }
 
 func (p *Publish) PacketType() int {
@@ -30,13 +30,13 @@ func (p *Publish) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
-	variablePart.Write(encodeString(p.topic))
-	if p.qos == 1 || p.qos == 2 {
-		variablePart.Write(encodeUint16(uint16(p.id)))
+	variablePart.Write(encodeString(p.Topic))
+	if p.Qos == 1 || p.Qos == 2 {
+		variablePart.Write(encodeUint16(uint16(p.ID)))
 	}
-	variablePart.Write([]byte(p.payload))
+	variablePart.Write([]byte(p.Payload))
 
-	fixedHeader := (publishType<<4 | bool2int(p.dup)<<3 | p.qos<<1 | bool2int(p.retain))
+	fixedHeader := (publishType<<4 | bool2int(p.Dup)<<3 | p.Qos<<1 | bool2int(p.Retain))
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
@@ -47,20 +47,20 @@ func (p *Publish) Marshall() bytes.Buffer {
 // Write unit test on decode / Marshall to check possible mistake in conversion
 func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 	publish := NewPublish()
-	publish.dup = int2bool(fixedHeaderFlags >> 3)
-	publish.qos = int((fixedHeaderFlags & 6) >> 1)
-	publish.retain = int2bool((fixedHeaderFlags & 1))
+	publish.Dup = int2bool(fixedHeaderFlags >> 3)
+	publish.Qos = int((fixedHeaderFlags & 6) >> 1)
+	publish.Retain = int2bool((fixedHeaderFlags & 1))
 	var rest []byte
-	publish.topic, rest = extractNextString(payload)
+	publish.Topic, rest = extractNextString(payload)
 	var index int
 	if len(rest) > 0 {
-		if publish.qos == 1 || publish.qos == 2 {
+		if publish.Qos == 1 || publish.Qos == 2 {
 			offset := 2
-			publish.id = int(binary.BigEndian.Uint16(rest[:offset]))
+			publish.ID = int(binary.BigEndian.Uint16(rest[:offset]))
 			index = offset
 		}
 		if len(rest) > index {
-			publish.payload = rest[index:]
+			publish.Payload = rest[index:]
 		}
 	}
 	return publish
