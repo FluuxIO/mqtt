@@ -10,6 +10,10 @@ type Unsubscribe struct {
 	topics []string
 }
 
+func (u *Unsubscribe) AddTopic(topic string) {
+	u.topics = append(u.topics, topic)
+}
+
 func (u *Unsubscribe) PacketType() int {
 	return unsubscribeType
 }
@@ -45,7 +49,7 @@ func decodeUnsubscribe(payload []byte) *Unsubscribe {
 	for remaining := payload[2:]; len(remaining) > 0; {
 		var topic string
 		topic, remaining = extractNextString(remaining)
-		unsubscribe.topics = append(unsubscribe.topics, topic)
+		unsubscribe.AddTopic(topic)
 	}
 
 	return unsubscribe

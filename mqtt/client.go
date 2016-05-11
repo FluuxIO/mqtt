@@ -103,6 +103,13 @@ func (c *Client) Subscribe(topic packet.Topic) {
 	c.send(&buf)
 }
 
+func (c *Client) Unsubscribe(topic string) {
+	unsubscribe := packet.NewUnsubscribe()
+	unsubscribe.AddTopic(topic)
+	buf := unsubscribe.Marshall()
+	c.send(&buf)
+}
+
 func (c *Client) Publish(topic string, payload []byte) {
 	publish := packet.NewPublish()
 	publish.SetTopic(topic)

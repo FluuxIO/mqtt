@@ -60,6 +60,12 @@ func NewSubscribe() *Subscribe {
 	return new(Subscribe)
 }
 
+// NewUnsubscribe creates an empty UNSUBSCRIBE packet. You need to add at
+// least one topic to create a valid unsubscribe packet.
+func NewUnsubscribe() *Unsubscribe {
+	return new(Unsubscribe)
+}
+
 // NewPingReq creates a PINGREQ packet
 func NewPingReq() *PingReq {
 	return new(PingReq)
@@ -84,6 +90,10 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 		return decodeSubscribe(payload)
 	case subackType:
 		return decodeSubAck(payload)
+	case unsubscribeType:
+		return decodeUnsubscribe(payload)
+	case unsubackType:
+		return decodeUnsubAck(payload)
 	case pingreqType:
 		return decodePingReq(payload)
 	case pingrespType:

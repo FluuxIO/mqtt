@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/processone/gomqtt/mqtt"
 	"github.com/processone/gomqtt/mqtt/packet"
@@ -19,8 +20,14 @@ func main() {
 		return
 	}
 
-	topic := packet.Topic{Name: "test/topic", Qos: 1}
+	name := "test/topic"
+	topic := packet.Topic{Name: name, Qos: 1}
 	client.Subscribe(topic)
+
+	time.AfterFunc(time.Duration(15)*time.Second, func() {
+		client.Unsubscribe(name)
+		//		client.Disconnect()
+	})
 
 	for {
 		if s2 := <-statusChan; s2.Err != nil {
