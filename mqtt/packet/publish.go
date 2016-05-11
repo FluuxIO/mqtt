@@ -11,7 +11,7 @@ type Publish struct {
 	qos     int
 	retain  bool
 	topic   string
-	payload string
+	payload []byte
 }
 
 func (p *Publish) PacketType() int {
