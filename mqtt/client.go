@@ -149,12 +149,3 @@ func pinger(c *Client) {
 
 	}
 }
-
-/* TODO refactor to be able to test that way:
-func test() {
-	cp = packet.NewConnect()
-	cp.usernmane = "mickael"
-	buf, err = cp.Marshal()
-	cp = packet.Read(buf)
-}
-*/
