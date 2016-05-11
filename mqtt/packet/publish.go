@@ -14,6 +14,14 @@ type Publish struct {
 	payload []byte
 }
 
+func (p *Publish) SetTopic(topic string) {
+	p.topic = topic
+}
+
+func (p *Publish) SetPayload(payload []byte) {
+	p.payload = payload
+}
+
 func (p *Publish) PacketType() int {
 	return publishType
 }

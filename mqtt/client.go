@@ -103,6 +103,14 @@ func (c *Client) Subscribe(topic packet.Topic) {
 	c.send(&buf)
 }
 
+func (c *Client) Publish(topic string, payload []byte) {
+	publish := packet.NewPublish()
+	publish.SetTopic(topic)
+	publish.SetPayload(payload)
+	buf := publish.Marshall()
+	c.send(&buf)
+}
+
 func (c *Client) send(buf *bytes.Buffer) {
 	buf.WriteTo(c.conn)
 	c.resetTimer()
