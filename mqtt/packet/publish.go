@@ -52,7 +52,7 @@ func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 			index = offset
 		}
 		if len(rest) > index {
-			publish.payload = string(rest[index:])
+			publish.payload = rest[index:]
 		}
 	}
 	return publish
