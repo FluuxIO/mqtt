@@ -25,7 +25,7 @@ func (s *SubAck) Marshall() bytes.Buffer {
 	}
 
 	fixedHeaderFlags := 0
-	fixedHeader := (subscribeType<<4 | fixedHeaderFlags)
+	fixedHeader := (subackType<<4 | fixedHeaderFlags)
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
