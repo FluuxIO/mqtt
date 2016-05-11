@@ -1,6 +1,9 @@
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/binary"
+)
 
 type Subscribe struct {
 	id     int
@@ -48,5 +51,16 @@ func (s *Subscribe) Marshall() bytes.Buffer {
 
 func decodeSubscribe(payload []byte) *Subscribe {
 	subscribe := new(Subscribe)
+	subscribe.id = int(binary.BigEndian.Uint16(payload[:2]))
+
+	for remaining := payload[2:]; len(remaining) > 0; {
+		topic := Topic{}
+		var rest []byte
+		topic.Name, rest = extractNextString(remaining)
+		topic.Qos = int(rest[0])
+		subscribe.AddTopic(topic)
+		remaining = rest[1:]
+	}
+
 	return subscribe
 }
