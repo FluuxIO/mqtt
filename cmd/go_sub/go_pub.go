@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/processone/gomqtt/mqtt"
 )
@@ -18,7 +19,9 @@ func main() {
 		return
 	}
 
-	client.Publish("test/topic", []byte("Hi, There !"))
+	ticker := time.NewTicker(time.Duration(5) * time.Second)
+	stop := make(chan bool)
+	go tickLoop(client, ticker, stop)
 
 	for {
 		if s2 := <-statusChan; s2.Err != nil {
@@ -28,5 +31,16 @@ func main() {
 			fmt.Printf("Received packet from Server: %+v\n", s2.Packet)
 		}
 	}
+}
 
+func tickLoop(client *mqtt.Client, ticker *time.Ticker, stop <-chan bool) {
+	for done := false; !done; {
+		select {
+		case <-ticker.C:
+			client.Publish("test/topic", []byte("Hi, There !"))
+		case <-stop:
+			done = true
+			break
+		}
+	}
 }
