@@ -118,6 +118,11 @@ func (c *Client) Publish(topic string, payload []byte) {
 	c.send(&buf)
 }
 
+func (c *Client) Disconnect() {
+	buf := packet.NewDisconnect().Marshall()
+	c.send(&buf)
+}
+
 func (c *Client) send(buf *bytes.Buffer) {
 	buf.WriteTo(c.conn)
 	c.resetTimer()
