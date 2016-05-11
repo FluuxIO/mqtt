@@ -44,7 +44,6 @@ func (p *Publish) Marshall() bytes.Buffer {
 	return packet
 }
 
-// Write unit test on decode / Marshall to check possible mistake in conversion
 func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 	publish := NewPublish()
 	publish.Dup = int2bool(fixedHeaderFlags >> 3)
