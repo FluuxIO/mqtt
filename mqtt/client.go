@@ -118,6 +118,7 @@ func (c *Client) Publish(topic string, payload []byte) {
 	c.send(&buf)
 }
 
+// Disconnect sends DISCONNECT MQTT packet to other party
 func (c *Client) Disconnect() {
 	buf := packet.NewDisconnect().Marshall()
 	c.send(&buf)
