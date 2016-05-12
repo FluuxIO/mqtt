@@ -76,6 +76,11 @@ func NewPingResp() *PingResp {
 	return new(PingResp)
 }
 
+// NewDisconnect creates a DISCONNECT packet
+func NewDisconnect() *Disconnect {
+	return new(Disconnect)
+}
+
 // Decode returns parsed struct from byte array
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	fmt.Printf("Decoding packet type: %d\n", packetType)
@@ -98,6 +103,8 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 		return decodePingReq(payload)
 	case pingrespType:
 		return decodePingResp(payload)
+	case disconnectType:
+		return decodeDisconnect(payload)
 	default:
 		fmt.Println("Unsupported MQTT packet type")
 		return nil
