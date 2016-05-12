@@ -1,3 +1,7 @@
+//
+// MQTT basic publisher
+//
+
 package main
 
 import (
