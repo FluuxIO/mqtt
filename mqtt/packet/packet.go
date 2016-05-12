@@ -24,6 +24,8 @@ const (
 )
 
 // Packet interface shared by all MQTT control packets
+// TODO Fix the name, maybe not the best one.
+// Should it be MQTTPacket ? ControlPacket ?
 type Marshaller interface {
 	Marshall() bytes.Buffer
 	PacketType() int

@@ -26,7 +26,6 @@ func main() {
 
 	time.AfterFunc(time.Duration(15)*time.Second, func() {
 		client.Unsubscribe(name)
-		//		client.Disconnect()
 	})
 
 	for {
