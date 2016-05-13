@@ -15,6 +15,7 @@
 
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
 - Support timeout on PingResp to trigger reconnect
+- Support subscription based on callbacks or on channels
 - Reconnect with backoff strategy
 - QOS
 - TLS

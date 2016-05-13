@@ -13,3 +13,17 @@ func encodeUint16(num uint16) []byte {
 	binary.BigEndian.PutUint16(bytes, num)
 	return bytes
 }
+
+func bool2int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func int2bool(i int) bool {
+	if i == 1 {
+		return true
+	}
+	return false
+}

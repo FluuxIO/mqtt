@@ -65,22 +65,3 @@ func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 	return publish
 }
 
-func bool2int(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-func int2bool(i int) bool {
-	if i == 1 {
-		return true
-	}
-	return false
-}
-
-func extractNextString(data []byte) (string, []byte) {
-	offset := 2
-	length := int(binary.BigEndian.Uint16(data[:offset]))
-	return string(data[offset : length+offset]), data[length+offset:]
-}

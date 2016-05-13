@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -52,4 +53,10 @@ func readRemainingLength(r io.Reader) (int, error) {
 	}
 
 	return int(value), err
+}
+
+func extractNextString(data []byte) (string, []byte) {
+	offset := 2
+	length := int(binary.BigEndian.Uint16(data[:offset]))
+	return string(data[offset : length+offset]), data[length+offset:]
 }
