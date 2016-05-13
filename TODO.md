@@ -13,6 +13,7 @@
 
 ## TODO
 
+- Use URL scheme to define connection to server: tcp:// tls://
 - Central place for errors definitions
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
 - Support timeout on PingResp to trigger reconnect
@@ -20,7 +21,7 @@
 - Reconnect with backoff strategy
 - QOS
 - TLS
-- Authentication
+- Authentication with username, password. They can be place in URL scheme. tcp://username:password@server 
 - Certificate based authentication
 - More unit tests
 - Example of publish / subscribe sharing Go structures with
