@@ -6,5 +6,3 @@ type ClientOptions struct {
 	ClientID  string
 	Keepalive int
 }
-
-// TODO set default value for keepalive
