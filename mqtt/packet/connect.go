@@ -16,7 +16,7 @@ type Connect struct {
 	clientID  string
 }
 
-// PacketType return packet type numerical value
+// PacketType returns packet type numerical value
 func (c *Connect) PacketType() int {
 	return connectType
 }

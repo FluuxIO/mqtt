@@ -42,8 +42,8 @@ func decodeSubAck(payload []byte) *SubAck {
 	suback := new(SubAck)
 	if len(payload) >= 2 {
 		suback.id = int(binary.BigEndian.Uint16(payload[:2]))
-		for byte := range payload[2:] {
-			suback.returnCodes = append(suback.returnCodes, int(byte))
+		for b := range payload[2:] {
+			suback.returnCodes = append(suback.returnCodes, int(b))
 		}
 	}
 	return suback

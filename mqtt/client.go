@@ -28,7 +28,7 @@ type Client struct {
 }
 
 type Status struct {
-	Packet packet.Marshaller
+	Packet packet.Packet
 	Err    error
 }
 
@@ -135,7 +135,7 @@ func (c *Client) resetTimer() {
 
 // Receive, decode and dispatch messages to Status channel
 func receiver(c *Client) {
-	var p packet.Marshaller
+	var p packet.Packet
 	var err error
 	for {
 		if p, err = packet.Read(c.conn); err != nil {
@@ -172,7 +172,7 @@ func pinger(c *Client) {
 }
 
 // Send acks if needed, depending on packet QOS
-func sendAck(c *Client, pkt packet.Marshaller) {
+func sendAck(c *Client, pkt packet.Packet) {
 	switch p := pkt.(type) {
 	case *packet.Publish:
 		if p.Qos == 1 {

@@ -1,9 +1,6 @@
 package packet
 
-import (
-	"bytes"
-	"fmt"
-)
+import "bytes"
 
 const (
 	reserved1Type   = iota
@@ -21,12 +18,11 @@ const (
 	pingreqType     = iota
 	pingrespType    = iota
 	disconnectType  = iota
+	reserved2Type   = iota
 )
 
 // Packet interface shared by all MQTT control packets
-// TODO Fix the name, maybe not the best one.
-// Should it be MQTTPacket ? ControlPacket ?
-type Marshaller interface {
+type Packet interface {
 	Marshall() bytes.Buffer
 	PacketType() int
 }
@@ -84,8 +80,7 @@ func NewDisconnect() *Disconnect {
 }
 
 // Decode returns parsed struct from byte array
-func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
-	fmt.Printf("Decoding packet type: %d\n", packetType)
+func Decode(packetType int, fixedHeaderFlags int, payload []byte) Packet {
 	switch packetType {
 	case connackType:
 		return decodeConnAck(payload)
@@ -107,8 +102,7 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 		return decodePingResp(payload)
 	case disconnectType:
 		return decodeDisconnect(payload)
-	default:
-		fmt.Println("Unsupported MQTT packet type")
+	default: // Unsupported MQTT packet type
 		return nil
 	}
 }
