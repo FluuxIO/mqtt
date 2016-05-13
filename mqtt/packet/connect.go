@@ -7,7 +7,7 @@ const (
 	fixedHeaderFlags = 0
 	protocolName     = "MQTT"
 	protocolLevel    = 4 // This is MQTT v3.1.1
-	clientID         = "GoMQTT"
+	defaultClientID  = "GoMQTT"
 )
 
 // Connect MQTT 3.1.1 control packet
@@ -37,7 +37,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	variablePart.WriteByte(byte(protocolLevel))
 	variablePart.WriteByte(byte(connectFlags))
 	variablePart.Write(encodeUint16(keepalive))
-	variablePart.Write(encodeString(clientID))
+	variablePart.Write(encodeString(defaultClientID)) // TODO: Support custom clientID
 
 	fixedHeader := (connectType<<4 | fixedHeaderFlags)
 	packet.WriteByte(byte(fixedHeader))
