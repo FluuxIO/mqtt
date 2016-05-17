@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	timerReset = 0
+	timerReset = iota
+	timerStop  = iota
 )
 
 // Client is the main structure use to connect as a client on an MQTT
@@ -23,7 +24,6 @@ type Client struct {
 	// TCP level connection / can be replace by a TLS session after starttls
 	conn         net.Conn
 	status       chan Status
-	pingTimer    *time.Timer
 	pingTimerCtl chan int
 }
 
@@ -151,21 +151,23 @@ func receiver(c *Client) {
 	}
 }
 
-// TODO Move to another source file
+// TODO Move to another source file: keepalive.go
 func pinger(c *Client) {
-	c.pingTimer = time.NewTimer(time.Duration(c.options.Keepalive) * time.Second)
+	pingTimer := time.NewTimer(time.Duration(c.options.Keepalive) * time.Second)
+	defer pingTimer.Stop()
 	for {
 		select {
-		case <-c.pingTimer.C:
+		case <-pingTimer.C:
 			pingReq := packet.NewPingReq()
 			buf := pingReq.Marshall()
 			buf.WriteTo(c.conn)
-			c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+			pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
 		case msg := <-c.pingTimerCtl:
 			switch msg {
 			case timerReset:
-				c.pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
-			default:
+				pingTimer.Reset(time.Duration(c.options.Keepalive) * time.Second)
+			case timerStop:
+				pingTimer.Stop()
 			}
 		}
 	}
