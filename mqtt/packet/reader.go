@@ -13,9 +13,6 @@ func Read(r io.Reader) (Packet, error) {
 	fixedHeader := make([]byte, 1)
 
 	if _, err = io.ReadFull(r, fixedHeader); err != nil {
-		if err == io.EOF {
-			fmt.Printf("Connection closed\n")
-		}
 		return nil, err
 	}
 

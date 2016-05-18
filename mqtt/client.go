@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/processone/gomqtt/mqtt/packet"
@@ -14,10 +16,12 @@ import (
 // Client is the main structure use to connect as a client on an MQTT
 // server.
 type Client struct {
+	mu sync.RWMutex
 	// Store user defined options
 	options ClientOptions
 	// TCP level connection / can be replace by a TLS session after starttls
 	conn         net.Conn
+	backoff      Backoff
 	status       chan Status
 	pingTimerCtl chan int
 }
@@ -60,36 +64,7 @@ func checkAddress(addr string) (string, error) {
 // Connect initiates asynchronous connection to MQTT server
 func (c *Client) Connect() <-chan Status {
 	c.status = make(chan Status)
-
-	go func() {
-		var err error
-		c.conn, err = net.DialTimeout("tcp", c.options.Address, 5*time.Second)
-		if err != nil {
-			c.status <- Status{Err: err}
-			return
-		}
-		// Send connect packet
-		connectPacket := packet.NewConnect()
-		connectPacket.SetKeepalive(c.options.Keepalive)
-		buf := connectPacket.Marshall()
-		buf.WriteTo(c.conn)
-
-		// TODO Check connack value before sending status to channel
-		packet.Read(c.conn)
-
-		// Start go routine that manage keepalive timer:
-		c.pingTimerCtl = startKeepalive(c, func() {
-			pingReq := packet.NewPingReq()
-			buf := pingReq.Marshall()
-			buf.WriteTo(c.conn)
-		})
-
-		c.status <- Status{}
-
-		// Status routine to receive incoming data
-		go receiver(c)
-	}()
-
+	go c.connect(false)
 	return c.status
 }
 
@@ -124,7 +99,7 @@ func (c *Client) Disconnect() {
 }
 
 func (c *Client) send(buf *bytes.Buffer) {
-	buf.WriteTo(c.conn)
+	buf.WriteTo(c.getConn())
 	c.resetTimer()
 }
 
@@ -136,10 +111,15 @@ func (c *Client) resetTimer() {
 func receiver(c *Client) {
 	var p packet.Packet
 	var err error
+	conn := c.conn
+Loop:
 	for {
-		if p, err = packet.Read(c.conn); err != nil {
+		if p, err = packet.Read(conn); err != nil {
+			if err == io.EOF {
+				fmt.Printf("Connection closed\n")
+			}
 			fmt.Printf("packet read error: %q\n", err)
-			break
+			break Loop
 		}
 		fmt.Printf("Received: %+v\n", p)
 		sendAck(c, p)
@@ -148,6 +128,62 @@ func receiver(c *Client) {
 			c.status <- Status{Packet: p}
 		}
 	}
+
+	// TODO Support ability to disable autoreconnect
+	conn.Close()
+	c.pingTimerCtl <- timerStop
+	fmt.Println("We need to trigger auto reconnect")
+	go c.connect(true)
+}
+
+func (c *Client) connect(retry bool) {
+	//	var err error
+	fmt.Println("Trying to connect")
+	conn, err := net.DialTimeout("tcp", c.options.Address, 5*time.Second)
+	if err != nil {
+		if !retry {
+			c.status <- Status{Err: err}
+			return
+		}
+		// Sleep with exponential backoff (and jitter) before triggering reconnect:
+		time.AfterFunc(c.backoff.Duration(), func() { c.connect(retry) })
+		return
+	}
+
+	c.backoff.Reset()
+	// Send connect packet
+	connectPacket := packet.NewConnect()
+	connectPacket.SetKeepalive(c.options.Keepalive)
+	buf := connectPacket.Marshall()
+	buf.WriteTo(conn)
+
+	// TODO Check connack value before sending status to channel
+	packet.Read(conn)
+
+	// Start go routine that manage keepalive timer:
+	c.pingTimerCtl = startKeepalive(c, func() {
+		pingReq := packet.NewPingReq()
+		buf := pingReq.Marshall()
+		buf.WriteTo(conn)
+	})
+
+	c.setConn(conn)
+	c.status <- Status{} // TODO Send connect status on reconnect and do not use same channel for packets.
+
+	// Status routine to receive incoming data
+	go receiver(c)
+}
+
+func (c *Client) getConn() net.Conn {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.conn
+}
+
+func (c *Client) setConn(conn net.Conn) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.conn = conn
 }
 
 // Send acks if needed, depending on packet QOS

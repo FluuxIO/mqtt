@@ -1,6 +1,9 @@
 package mqtt
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	timerReset = iota
@@ -16,6 +19,7 @@ Loop:
 	for {
 		select {
 		case <-pingTimer.C:
+			fmt.Print("Keepalive module is running keepalive action")
 			action()
 			pingTimer.Reset(time.Duration(keepalive) * time.Second)
 		case msg := <-pingTimerCtl:
