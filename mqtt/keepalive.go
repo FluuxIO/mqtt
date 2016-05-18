@@ -12,30 +12,30 @@ const (
 
 type keepaliveAction func()
 
-func pinger(keepalive int, pingTimerCtl chan int, action keepaliveAction) {
-	pingTimer := time.NewTimer(time.Duration(keepalive) * time.Second)
-	defer pingTimer.Stop()
+func startKeepalive(c *Client, action keepaliveAction) chan int {
+	channel := make(chan int)
+	go keepalive(c.options.Keepalive, channel, action)
+	return channel
+}
+
+func keepalive(keepalive int, pingTimerCtl chan int, action keepaliveAction) {
+	timer := time.NewTimer(time.Duration(keepalive) * time.Second)
+	defer timer.Stop()
 Loop:
 	for {
 		select {
-		case <-pingTimer.C:
+		case <-timer.C:
 			fmt.Print("Keepalive module is running keepalive action")
 			action()
-			pingTimer.Reset(time.Duration(keepalive) * time.Second)
+			timer.Reset(time.Duration(keepalive) * time.Second)
 		case msg := <-pingTimerCtl:
 			switch msg {
 			case timerReset:
-				pingTimer.Reset(time.Duration(keepalive) * time.Second)
+				timer.Reset(time.Duration(keepalive) * time.Second)
 			case timerStop:
-				pingTimer.Stop()
+				timer.Stop()
 				break Loop
 			}
 		}
 	}
-}
-
-func startKeepalive(c *Client, action keepaliveAction) chan int {
-	channel := make(chan int)
-	go pinger(c.options.Keepalive, channel, action)
-	return channel
 }
