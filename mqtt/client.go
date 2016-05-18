@@ -11,11 +11,6 @@ import (
 	"github.com/processone/gomqtt/mqtt/packet"
 )
 
-const (
-	timerReset = iota
-	timerStop  = iota
-)
-
 // Client is the main structure use to connect as a client on an MQTT
 // server.
 type Client struct {
@@ -81,10 +76,15 @@ func (c *Client) Connect() <-chan Status {
 
 		// TODO Check connack value before sending status to channel
 		packet.Read(c.conn)
-		c.status <- Status{}
 
-		// Ping go routine to manage keepalive timer
-		c.pingTimerCtl = startPinger(c)
+		// Start go routine that manage keepalive timer:
+		c.pingTimerCtl = startKeepalive(c, func() {
+			pingReq := packet.NewPingReq()
+			buf := pingReq.Marshall()
+			buf.WriteTo(c.conn)
+		})
+
+		c.status <- Status{}
 
 		// Status routine to receive incoming data
 		go receiver(c)
@@ -148,38 +148,6 @@ func receiver(c *Client) {
 			c.status <- Status{Packet: p}
 		}
 	}
-}
-
-// TODO Move to another source file: keepalive.go
-// TODO should / can PingtimerCtl be owned by keepalive go routine and returned to client as API for keepalive timer tool ?
-func pinger(keepalive int, pingTimerCtl chan int, conn net.Conn) {
-	pingTimer := time.NewTimer(time.Duration(keepalive) * time.Second)
-	defer pingTimer.Stop()
-Loop:
-	for {
-		select {
-		case <-pingTimer.C:
-			// Pass anonymous function to act for keepalive instead of passing net.conn and hardcoding here the ping operation:
-			pingReq := packet.NewPingReq()
-			buf := pingReq.Marshall()
-			buf.WriteTo(conn)
-			pingTimer.Reset(time.Duration(keepalive) * time.Second)
-		case msg := <-pingTimerCtl:
-			switch msg {
-			case timerReset:
-				pingTimer.Reset(time.Duration(keepalive) * time.Second)
-			case timerStop:
-				pingTimer.Stop()
-				break Loop
-			}
-		}
-	}
-}
-
-func startPinger(c *Client) chan int {
-	channel := make(chan int)
-	go pinger(c.options.Keepalive, channel, c.conn)
-	return channel
 }
 
 // Send acks if needed, depending on packet QOS
