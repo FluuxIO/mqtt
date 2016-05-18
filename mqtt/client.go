@@ -26,9 +26,23 @@ type Client struct {
 	pingTimerCtl chan int
 }
 
+// TODO split channel between status signals (informing about the state of the client) and message received (informing
+// about the publish we have received.
+// We also should abstract the Message to hide the details of the protocol from the developer client: MQTT protocol could
+// change on the wire, but we can likely keep the same internal format for publish messages received.
+
+const (
+	statusConnected    = iota
+	statusReconnecting = iota
+)
+
 type Status struct {
 	Packet packet.Packet
 	Err    error
+}
+
+type Message struct {
+	Payload []byte
 }
 
 // NewClient generates a new XMPP client, based on Options passed as parameters.
