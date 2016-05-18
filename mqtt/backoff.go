@@ -80,7 +80,7 @@ func (b *Backoff) setDefault() {
 }
 
 /*
-We use full jitter for now as it seems to provide good behaviour for reconnect.
+We use full jitter as default for now as it seems to provide good behaviour for reconnect.
 
 base is the default interval between attempts (if backoff factor was equal to 1)
 

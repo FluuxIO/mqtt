@@ -6,7 +6,7 @@ import (
 )
 
 func TestDurationForAttempt_NoJitter(t *testing.T) {
-	b := Backoff{Base: 25}
+	b := Backoff{Base: 25, NoJitter: true}
 	if b.DurationForAttempt(0) != time.Duration(b.Base) {
 		t.Errorf("incorrect default duration for attempt #0 (%d) = %d", b.DurationForAttempt(0), b.Base)
 	}
