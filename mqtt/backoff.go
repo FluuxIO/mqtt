@@ -22,7 +22,6 @@ TODO: Implement Backoff Ticker channel
 package mqtt
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -46,12 +45,10 @@ type Backoff struct {
 func (b *Backoff) Duration() time.Duration {
 	d := b.DurationForAttempt(b.attempt)
 	b.attempt++
-	fmt.Printf("Duration for backoff: %d", d)
 	return d
 }
 
 func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
-	fmt.Printf("Calculating duration for attempt: %d", attempt)
 	b.setDefault()
 	expBackoff := math.Min(float64(b.Cap), float64(b.Base)*math.Pow(float64(b.Factor), float64(b.attempt)))
 	d := int(math.Trunc(expBackoff))
