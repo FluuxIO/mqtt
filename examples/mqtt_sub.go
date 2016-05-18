@@ -32,6 +32,10 @@ func main() {
 		client.Unsubscribe(name)
 	})
 
+	// I use this to check number of go routines in memory
+	// Can be commented out
+	mqtt.QuitDebugHandler()
+
 	for {
 		if s2 := <-statusChan; s2.Err != nil {
 			fmt.Printf("MQTT error: %q\n", s2.Err)
