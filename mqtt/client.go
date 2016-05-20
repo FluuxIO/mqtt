@@ -45,7 +45,7 @@ type Message struct {
 	Packet packet.Packet
 }
 
-// NewClient generates a new XMPP client, based on Options passed as parameters.
+// NewClient generates a new MQTT client, based on Options passed as parameters.
 // Default the port to 1883.
 func NewClient(options ClientOptions) (c *Client, err error) {
 	if options.Address, err = checkAddress(options.Address); err != nil {
@@ -62,7 +62,7 @@ func checkAddress(addr string) (string, error) {
 	var err error
 	hostport := strings.Split(addr, ":")
 	if len(hostport) > 2 {
-		err = errors.New("too many colons in xmpp server address")
+		err = errors.New("too many colons in server address")
 		return addr, err
 	}
 
