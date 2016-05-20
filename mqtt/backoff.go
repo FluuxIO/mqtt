@@ -33,46 +33,46 @@ const (
 	defaultCap    int = 180000 // 3 minutes
 )
 
-type Backoff struct {
-	NoJitter     bool
-	Base         int
-	Factor       int
-	Cap          int
-	LastDuration int
+type backoff struct {
+	noJitter     bool
+	base         int
+	factor       int
+	cap          int
+	lastDuration int
 	attempt      int
 }
 
-func (b *Backoff) Duration() time.Duration {
+func (b *backoff) Duration() time.Duration {
 	d := b.DurationForAttempt(b.attempt)
 	b.attempt++
 	return d
 }
 
-func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
+func (b *backoff) DurationForAttempt(attempt int) time.Duration {
 	b.setDefault()
-	expBackoff := math.Min(float64(b.Cap), float64(b.Base)*math.Pow(float64(b.Factor), float64(b.attempt)))
+	expBackoff := math.Min(float64(b.cap), float64(b.base)*math.Pow(float64(b.factor), float64(b.attempt)))
 	d := int(math.Trunc(expBackoff))
-	if !b.NoJitter {
+	if !b.noJitter {
 		d = rand.Intn(d)
 	}
 	return time.Duration(d) * time.Millisecond
 }
 
-func (b *Backoff) Reset() {
+func (b *backoff) Reset() {
 	b.attempt = 0
 }
 
-func (b *Backoff) setDefault() {
-	if b.Base == 0 {
-		b.Base = defaultBase
+func (b *backoff) setDefault() {
+	if b.base == 0 {
+		b.base = defaultBase
 	}
 
-	if b.Cap == 0 {
-		b.Cap = defaultCap
+	if b.cap == 0 {
+		b.cap = defaultCap
 	}
 
-	if b.Factor == 0 {
-		b.Factor = defaultFactor
+	if b.factor == 0 {
+		b.factor = defaultFactor
 	}
 }
 

@@ -1,3 +1,6 @@
+/*
+MQTT package implements MQTT protocol. It can be use as a client library to write MQTT clients in Go.
+*/
 package mqtt
 
 import (
@@ -21,13 +24,13 @@ type Client struct {
 	options ClientOptions
 	// TCP level connection / can be replaced by a TLS session after starttls
 	conn         net.Conn
-	backoff      Backoff
+	backoff      backoff
 	status       chan Status
 	pingTimerCtl chan int
 }
 
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
-// about the publish we have received.
+// about the publish we have received)
 // We also should abstract the Message to hide the details of the protocol from the developer client: MQTT protocol could
 // change on the wire, but we can likely keep the same internal format for publish messages received.
 
@@ -41,8 +44,10 @@ type Status struct {
 	Err    error
 }
 
+// Message encapsulates Publish MQTT payload from the MQTT client perspective.
 type Message struct {
-	Packet packet.Packet
+	Topic   string
+	Payload []byte
 }
 
 // NewClient generates a new MQTT client, based on Options passed as parameters.
@@ -83,6 +88,7 @@ func (c *Client) Connect() <-chan Status {
 }
 
 // TODO Serialize packet send into its own channel / go routine
+//
 // FIXME(mr) packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
