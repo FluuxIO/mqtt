@@ -34,7 +34,7 @@ func main() {
 
 	// I use this to check number of go routines in memory
 	// Can be commented out
-	mqtt.QuitDebugHandler()
+	quitDebugHandler()
 
 	for {
 		if s2 := <-statusChan; s2.Err != nil {

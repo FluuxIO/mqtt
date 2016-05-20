@@ -25,7 +25,7 @@ func main() {
 
 	// I use this to check number of go routines in memory
 	// Can be commented out
-	mqtt.QuitDebugHandler()
+	quitDebugHandler()
 
 	ticker := time.NewTicker(time.Duration(5) * time.Second)
 	stop := make(chan bool)
