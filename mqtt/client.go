@@ -35,8 +35,10 @@ type Client struct {
 // change on the wire, but we can likely keep the same internal format for publish messages received.
 
 const (
-	statusConnected    = iota
-	statusReconnecting = iota
+	stateConnecting   = iota
+	stateConnected    = iota
+	stateReconnecting = iota
+	stateDisconnected = iota
 )
 
 type Status struct {
@@ -144,7 +146,7 @@ Loop:
 		fmt.Printf("Received: %+v\n", p)
 		sendAck(c, p)
 		// For now, only broadcast publish packets back to client
-		if p.PacketType() == 3 { // TODO refactor not to hardcode that value
+		if p.PacketType() == 3 { // FIXME(mr) refactor not to hardcode that value
 			c.status <- Status{Packet: p}
 		}
 	}
@@ -152,12 +154,10 @@ Loop:
 	// TODO Support ability to disable autoreconnect
 	conn.Close()
 	c.pingTimerCtl <- keepaliveStop
-	fmt.Println("We need to trigger auto reconnect")
 	go c.connect(true)
 }
 
 func (c *Client) connect(retry bool) {
-	//	var err error
 	fmt.Println("Trying to connect")
 	conn, err := net.DialTimeout("tcp", c.options.Address, 5*time.Second)
 	if err != nil {
