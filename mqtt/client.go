@@ -19,7 +19,7 @@ type Client struct {
 	mu sync.RWMutex
 	// Store user defined options
 	options ClientOptions
-	// TCP level connection / can be replace by a TLS session after starttls
+	// TCP level connection / can be replaced by a TLS session after starttls
 	conn         net.Conn
 	backoff      Backoff
 	status       chan Status
@@ -42,7 +42,7 @@ type Status struct {
 }
 
 type Message struct {
-	Payload []byte
+	Packet packet.Packet
 }
 
 // NewClient generates a new XMPP client, based on Options passed as parameters.
@@ -83,7 +83,7 @@ func (c *Client) Connect() <-chan Status {
 }
 
 // TODO Serialize packet send into its own channel / go routine
-// FIXME packet.Topic does not seem a good name
+// FIXME(mr) packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
 	subscribe.AddTopic(topic)
@@ -118,7 +118,7 @@ func (c *Client) send(buf *bytes.Buffer) {
 }
 
 func (c *Client) resetTimer() {
-	c.pingTimerCtl <- timerReset
+	c.pingTimerCtl <- keepaliveReset
 }
 
 // Receive, decode and dispatch messages to Status channel
@@ -145,7 +145,7 @@ Loop:
 
 	// TODO Support ability to disable autoreconnect
 	conn.Close()
-	c.pingTimerCtl <- timerStop
+	c.pingTimerCtl <- keepaliveStop
 	fmt.Println("We need to trigger auto reconnect")
 	go c.connect(true)
 }

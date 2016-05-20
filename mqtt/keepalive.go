@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	timerReset = iota
-	timerStop  = iota
+	keepaliveReset = iota
+	keepaliveStop  = iota
 )
 
 type keepaliveAction func()
@@ -30,9 +30,9 @@ Loop:
 			timer.Reset(time.Duration(keepalive) * time.Second)
 		case msg := <-pingTimerCtl:
 			switch msg {
-			case timerReset:
+			case keepaliveReset:
 				timer.Reset(time.Duration(keepalive) * time.Second)
-			case timerStop:
+			case keepaliveStop:
 				timer.Stop()
 				break Loop
 			}
