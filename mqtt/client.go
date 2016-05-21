@@ -25,8 +25,8 @@ type Client struct {
 	// TCP level connection / can be replaced by a TLS session after starttls
 	conn         net.Conn
 	backoff      backoff
-	status       chan Status
 	pingTimerCtl chan int
+	message      chan *Message
 }
 
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
@@ -40,11 +40,6 @@ const (
 	stateReconnecting = iota
 	stateDisconnected = iota
 )
-
-type Status struct {
-	Packet packet.Packet
-	Err    error
-}
 
 // Message encapsulates Publish MQTT payload from the MQTT client perspective.
 type Message struct {
@@ -82,11 +77,9 @@ func checkAddress(addr string) (string, error) {
 	return strings.Join([]string{hostport[0], "1883"}, ":"), err
 }
 
-// Connect initiates asynchronous connection to MQTT server
-func (c *Client) Connect() <-chan Status {
-	c.status = make(chan Status)
-	go c.connect(false)
-	return c.status
+// Connect initiates synchronous connection to MQTT server
+func (c *Client) Connect() error {
+	return c.connect(false)
 }
 
 // TODO Serialize packet send into its own channel / go routine
@@ -104,6 +97,10 @@ func (c *Client) Unsubscribe(topic string) {
 	unsubscribe.AddTopic(topic)
 	buf := unsubscribe.Marshall()
 	c.send(&buf)
+}
+
+func (c *Client) ReadNext() *Message {
+	return <-c.message
 }
 
 func (c *Client) Publish(topic string, payload []byte) {
@@ -129,7 +126,7 @@ func (c *Client) resetTimer() {
 	c.pingTimerCtl <- keepaliveReset
 }
 
-// Receive, decode and dispatch messages to Status channel
+// Receive, decode and dispatch messages to the message channel
 func receiver(c *Client) {
 	var p packet.Packet
 	var err error
@@ -145,40 +142,49 @@ Loop:
 		}
 		fmt.Printf("Received: %+v\n", p)
 		sendAck(c, p)
-		// For now, only broadcast publish packets back to client
-		if p.PacketType() == 3 { // FIXME(mr) refactor not to hardcode that value
-			c.status <- Status{Packet: p}
+		// Only broadcast message back to client when we receive publish packets
+		switch publish := p.(type) {
+		case *packet.Publish:
+			m := new(Message)
+			m.Topic = publish.Topic
+			m.Payload = publish.Payload
+			c.message <- m
+		default:
 		}
 	}
 
 	// TODO Support ability to disable autoreconnect
+	// Cleanup and reconnect
 	conn.Close()
 	c.pingTimerCtl <- keepaliveStop
 	go c.connect(true)
 }
 
-func (c *Client) connect(retry bool) {
+func (c *Client) connect(retry bool) error {
 	fmt.Println("Trying to connect")
 	conn, err := net.DialTimeout("tcp", c.options.Address, 5*time.Second)
 	if err != nil {
 		if !retry {
-			c.status <- Status{Err: err}
-			return
+			return err
 		}
 		// Sleep with exponential backoff (and jitter) before triggering reconnect:
 		time.AfterFunc(c.backoff.Duration(), func() { c.connect(retry) })
-		return
+		return nil
 	}
 
-	c.backoff.Reset()
+	// 1. Open session - Login
 	// Send connect packet
 	connectPacket := packet.NewConnect()
 	connectPacket.SetKeepalive(c.options.Keepalive)
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
-	// TODO Check connack value before sending status to channel
+	// TODO Check connack value to validate session open success
 	packet.Read(conn)
+
+	// 2. Connected. We set environment up
+	c.backoff.Reset()
+	c.message = make(chan *Message)
 
 	// Start go routine that manage keepalive timer:
 	c.pingTimerCtl = startKeepalive(c, func() {
@@ -188,10 +194,10 @@ func (c *Client) connect(retry bool) {
 	})
 
 	c.setConn(conn)
-	c.status <- Status{} // TODO Send connect status on reconnect and do not use same channel for packets.
 
-	// Status routine to receive incoming data
+	// Routine to receive incoming data
 	go receiver(c)
+	return nil
 }
 
 func (c *Client) getConn() net.Conn {

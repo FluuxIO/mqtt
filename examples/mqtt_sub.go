@@ -6,6 +6,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"runtime/pprof"
+	"syscall"
 	"time"
 
 	"github.com/processone/gomqtt/mqtt"
@@ -17,10 +21,8 @@ func main() {
 	fmt.Printf("Server to connect to: %s\n", options.Address)
 
 	client, _ := mqtt.NewClient(options)
-	statusChan := client.Connect()
-
-	if s1 := <-statusChan; s1.Err != nil {
-		fmt.Printf("Connection error: %q\n", s1.Err)
+	if err := client.Connect(); err != nil {
+		fmt.Printf("Connection error: %q\n", err)
 		return
 	}
 
@@ -34,15 +36,20 @@ func main() {
 
 	// I use this to check number of go routines in memory
 	// Can be commented out
-	quitDebugHandler()
+	go quitDebugHandler()
 
 	for {
-		if s2 := <-statusChan; s2.Err != nil {
-			fmt.Printf("MQTT error: %q\n", s2.Err)
-			break
-		} else {
-			fmt.Printf("Received packet from Server: %+v\n", s2.Packet)
-		}
+		s2 := client.ReadNext()
+		fmt.Printf("Received packet from Server: %+v\n", s2.Payload)
 	}
+}
 
+func quitDebugHandler() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGQUIT)
+	//	buf := make([]byte, 1<<20)
+	for {
+		<-sigs
+		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+	}
 }
