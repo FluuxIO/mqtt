@@ -13,6 +13,7 @@
 
 ## TODO
 
+- Make connect synchronous. It is easy in Go to wrap the call to make it asynchronous: http://stackoverflow.com/a/6329459/559289
 - Use URL scheme to define connection to server: tcp:// tls://
 - Central place for errors definitions
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
