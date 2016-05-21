@@ -40,7 +40,7 @@ func main() {
 
 	for {
 		s2 := client.ReadNext()
-		fmt.Printf("Received packet from Server: %+v\n", s2.Payload)
+		fmt.Printf("Received packet from Server on %s: %+v\n", s2.Topic, s2.Payload)
 	}
 }
 
