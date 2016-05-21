@@ -13,6 +13,7 @@
 
 ## TODO
 
+- We need to setup subscription on reconnect
 - Make connect synchronous. It is easy in Go to wrap the call to make it asynchronous: http://stackoverflow.com/a/6329459/559289
 - Use URL scheme to define connection to server: tcp:// tls://
 - Central place for errors definitions
