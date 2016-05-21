@@ -25,7 +25,7 @@ type Client struct {
 	// TCP level connection / can be replaced by a TLS session after starttls
 	conn         net.Conn
 	backoff      backoff
-	pingTimerCtl chan int
+	keepaliveCtl chan int
 	message      chan *Message
 }
 
@@ -125,7 +125,7 @@ func (c *Client) send(buf *bytes.Buffer) {
 }
 
 func (c *Client) resetTimer() {
-	c.pingTimerCtl <- keepaliveReset
+	c.keepaliveCtl <- keepaliveReset
 }
 
 // Receive, decode and dispatch messages to the message channel
@@ -158,7 +158,7 @@ Loop:
 	// TODO Support ability to disable autoreconnect
 	// Cleanup and reconnect
 	conn.Close()
-	c.pingTimerCtl <- keepaliveStop
+	c.keepaliveCtl <- keepaliveStop
 	go c.connect(true)
 }
 
@@ -191,7 +191,7 @@ func (c *Client) connect(retry bool) error {
 	c.mu.Unlock()
 
 	// Start go routine that manage keepalive timer:
-	c.pingTimerCtl = startKeepalive(c, func() {
+	c.keepaliveCtl = startKeepalive(c, func() {
 		pingReq := packet.NewPingReq()
 		buf := pingReq.Marshall()
 		buf.WriteTo(conn)
