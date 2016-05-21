@@ -100,6 +100,8 @@ func (c *Client) Unsubscribe(topic string) {
 }
 
 func (c *Client) ReadNext() *Message {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return <-c.message
 }
 
@@ -184,7 +186,9 @@ func (c *Client) connect(retry bool) error {
 
 	// 2. Connected. We set environment up
 	c.backoff.Reset()
+	c.mu.Lock()
 	c.message = make(chan *Message)
+	c.mu.Unlock()
 
 	// Start go routine that manage keepalive timer:
 	c.pingTimerCtl = startKeepalive(c, func() {
