@@ -9,11 +9,10 @@ import (
 )
 
 // Receiver actually need:
-// - Net.conn (Will be replaced by SenderChannel)
+// - Net.conn
+// - Sender (to send ack packet when packets requiring acks are received)
 // - Error send channel to trigger teardown
 // - MessageSendChannel to dispatch messages to client
-//
-// For now I think sender will manage keepalive go routine.
 
 func initReceiver(conn net.Conn, messageChannel chan *Message, s sender) <-chan struct{} {
 	tearDown := make(chan struct{})
