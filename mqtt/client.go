@@ -26,6 +26,7 @@ type Client struct {
 	backoff      backoff
 	keepaliveCtl chan int
 	message      chan *Message
+	sender       chan []byte
 }
 
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
@@ -99,8 +100,6 @@ func (c *Client) Unsubscribe(topic string) {
 }
 
 func (c *Client) ReadNext() *Message {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	return <-c.message
 }
 
@@ -151,9 +150,11 @@ func (c *Client) connect(retry bool) error {
 
 	// 2. Connected. We set environment up
 	c.backoff.Reset()
-	c.mu.Lock()
-	c.message = make(chan *Message)
-	c.mu.Unlock()
+	// For now we do not need to change the message channel
+	if c.message == nil {
+		c.message = make(chan *Message)
+	}
+	c.setConn(conn) // TODO: Avoid double lock / unlock on first connect
 
 	// Start go routine that manage keepalive timer:
 	c.keepaliveCtl = startKeepalive(c, func() {
@@ -162,11 +163,19 @@ func (c *Client) connect(retry bool) error {
 		buf.WriteTo(conn)
 	})
 
-	c.setConn(conn)
-
 	// Routine to receive incoming data
-	go receiver(c)
+	// func receiver2(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message) {
+	tearDown := initReceiver(conn, c.message)
+	go c.disconnected(tearDown)
 	return nil
+}
+
+// get receiver tearDown signal, clean client state and trigger reconnect
+func (c *Client) disconnected(stopSignal <-chan struct{}) {
+	<-stopSignal
+	c.conn.Close()
+	c.keepaliveCtl <- keepaliveStop
+	go c.connect(true)
 }
 
 func (c *Client) getConn() net.Conn {
@@ -181,14 +190,15 @@ func (c *Client) setConn(conn net.Conn) {
 	c.conn = conn
 }
 
-// Send acks if needed, depending on packet QOS
-func sendAck(c *Client, pkt packet.Packet) {
-	switch p := pkt.(type) {
-	case *packet.Publish:
-		if p.Qos == 1 {
-			puback := packet.NewPubAck(p.ID)
-			buf := puback.Marshall()
-			c.send(&buf)
-		}
+/*
+type sender struct {
+}
+
+func (c *Client) sender(out chan *bytes.Buffer) {
+	select {
+	case buf := <-out:
+		buf.WriteTo(c.getConn())
+		c.resetTimer()
 	}
 }
+*/
