@@ -9,9 +9,9 @@ const (
 
 type keepaliveAction func()
 
-func startKeepalive(c *Client, action keepaliveAction) chan int {
+func startKeepalive(keepaliveDuration int, action keepaliveAction) chan int {
 	channel := make(chan int)
-	go keepalive(c.options.Keepalive, channel, action)
+	go keepalive(keepaliveDuration, channel, action)
 	return channel
 }
 

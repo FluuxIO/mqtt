@@ -21,12 +21,9 @@ type Client struct {
 	mu sync.RWMutex
 	// Store user defined options
 	options ClientOptions
-	// TCP level connection / can be replaced by a TLS session after starttls
-	conn         net.Conn
-	backoff      backoff
-	keepaliveCtl chan int
-	message      chan *Message
-	sender       chan []byte
+	backoff backoff
+	message chan *Message
+	sender  sender
 }
 
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
@@ -82,6 +79,11 @@ func (c *Client) Connect() error {
 	return c.connect(false)
 }
 
+// ReadNext can be called from client to readNext message
+func (c *Client) ReadNext() *Message {
+	return <-c.message
+}
+
 // TODO Serialize packet send into its own channel / go routine
 //
 // FIXME(mr) packet.Topic does not seem a good name
@@ -99,10 +101,6 @@ func (c *Client) Unsubscribe(topic string) {
 	c.send(&buf)
 }
 
-func (c *Client) ReadNext() *Message {
-	return <-c.message
-}
-
 func (c *Client) Publish(topic string, payload []byte) {
 	publish := packet.NewPublish()
 	publish.SetTopic(topic)
@@ -115,15 +113,7 @@ func (c *Client) Publish(topic string, payload []byte) {
 func (c *Client) Disconnect() {
 	buf := packet.NewDisconnect().Marshall()
 	c.send(&buf)
-}
-
-func (c *Client) send(buf *bytes.Buffer) {
-	buf.WriteTo(c.getConn())
-	c.resetTimer()
-}
-
-func (c *Client) resetTimer() {
-	c.keepaliveCtl <- keepaliveReset
+	// TODO Properly terminates receiver and sender and close message channel
 }
 
 func (c *Client) connect(retry bool) error {
@@ -154,51 +144,35 @@ func (c *Client) connect(retry bool) error {
 	if c.message == nil {
 		c.message = make(chan *Message)
 	}
-	c.setConn(conn) // TODO: Avoid double lock / unlock on first connect
 
-	// Start go routine that manage keepalive timer:
-	c.keepaliveCtl = startKeepalive(c, func() {
-		pingReq := packet.NewPingReq()
-		buf := pingReq.Marshall()
-		buf.WriteTo(conn)
-	})
-
-	// Routine to receive incoming data
-	// func receiver2(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message) {
-	tearDown := initReceiver(conn, c.message)
-	go c.disconnected(tearDown)
+	c.setSender(initSender(conn, c.options.Keepalive))
+	// Start routine to receive incoming data
+	tearDown := initReceiver(conn, c.message, c.sender)
+	// Routine to watch for disconnect event and trigger reconnect
+	go c.disconnected(tearDown, c.sender.done)
 	return nil
 }
 
 // get receiver tearDown signal, clean client state and trigger reconnect
-func (c *Client) disconnected(stopSignal <-chan struct{}) {
-	<-stopSignal
-	c.conn.Close()
-	c.keepaliveCtl <- keepaliveStop
+func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}) {
+	<-receiverDone
+	c.sender.quit <- struct{}{}
 	go c.connect(true)
 }
 
-func (c *Client) getConn() net.Conn {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.conn
+func (c *Client) send(buf *bytes.Buffer) {
+	sender := c.getSender()
+	sender.send(buf)
 }
 
-func (c *Client) setConn(conn net.Conn) {
+func (c *Client) setSender(sender sender) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.conn = conn
+	c.sender = sender
 }
 
-/*
-type sender struct {
+func (c *Client) getSender() sender {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.sender
 }
-
-func (c *Client) sender(out chan *bytes.Buffer) {
-	select {
-	case buf := <-out:
-		buf.WriteTo(c.getConn())
-		c.resetTimer()
-	}
-}
-*/
