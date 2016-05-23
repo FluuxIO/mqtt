@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	ErrMalformedAddress = errors.New("malformed server address")
+	ErrMalformedAddress     = errors.New("malformed server address")
+	ErrWrongConnectResponse = errors.New("incorrect connet response")
 )
 
 // Client is the main structure use to connect as a client on an MQTT
@@ -139,8 +140,20 @@ func (c *Client) connect(retry bool) error {
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
-	// TODO Check connack value to validate session open success
-	packet.Read(conn)
+	if connack, err := packet.Read(conn); err != nil {
+		return err
+	} else {
+		switch p := connack.(type) {
+		case *packet.ConnAck:
+			switch p.ReturnCode {
+			case packet.ConnAccepted:
+			default:
+				return packet.ConnAckError(p.ReturnCode)
+			}
+		default:
+			return ErrWrongConnectResponse
+		}
+	}
 
 	// 2. Connected. We set environment up
 	c.backoff.Reset()
@@ -160,7 +173,9 @@ func (c *Client) connect(retry bool) error {
 // get receiver tearDown signal, clean client state and trigger reconnect
 func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}) {
 	<-receiverDone
+	fmt.Println("After receiver done")
 	c.sender.quit <- struct{}{}
+	time.Sleep(time.Duration(60) * time.Second)
 	go c.connect(true)
 }
 

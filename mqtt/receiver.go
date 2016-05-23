@@ -39,11 +39,11 @@ Loop:
 		sendAckIfNeeded(p, s)
 
 		// Only broadcast message back to client when we receive publish packets
-		switch publish := p.(type) {
+		switch packetType := p.(type) {
 		case *packet.Publish:
 			m := new(Message)
-			m.Topic = publish.Topic
-			m.Payload = publish.Payload
+			m.Topic = packetType.Topic
+			m.Payload = packetType.Payload
 			message <- m // TODO Back pressure. We may block on processing message if client does not read fast enough. Make sure we can quit.
 		default:
 		}

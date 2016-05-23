@@ -41,7 +41,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	variablePart.WriteByte(byte(protocolLevel))
 	variablePart.WriteByte(byte(connectFlags))
 	variablePart.Write(encodeUint16(keepalive))
-	variablePart.Write(encodeString(setDefaultClientID(c.clientID)))
+	variablePart.Write(encodeString(defineClientID(c.clientID)))
 
 	fixedHeader := (connectType<<4 | fixedHeaderFlags)
 	packet.WriteByte(byte(fixedHeader))
@@ -51,7 +51,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	return packet
 }
 
-func setDefaultClientID(clientID string) string {
+func defineClientID(clientID string) string {
 	if clientID == "" {
 		return defaultClientID
 	}

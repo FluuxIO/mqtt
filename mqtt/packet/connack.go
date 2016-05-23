@@ -2,12 +2,22 @@ package packet
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 )
 
 type ConnAck struct {
 	ReturnCode int
 }
+
+const (
+	ConnAccepted                     = 0x00
+	ConnRefusedBadProtocolVersion    = 0x01
+	ConnRefusedIDRejected            = 0x02
+	ConnRefusedServerUnavailable     = 0x03
+	ConnRefusedBadUsernameOrPassword = 0x04
+	ConnRefusedNotAuthorised         = 0x05
+)
 
 func (c *ConnAck) PacketType() int {
 	return connackType
@@ -36,4 +46,20 @@ func decodeConnAck(payload []byte) *ConnAck {
 	connAck.ReturnCode = int(payload[1])
 	fmt.Printf("Return Code: %d\n", connAck.ReturnCode)
 	return connAck
+}
+
+func ConnAckError(returnCode int) error {
+	switch returnCode {
+	case ConnRefusedBadProtocolVersion:
+		return errors.New("connection refused, unacceptable protocol version")
+	case ConnRefusedIDRejected:
+		return errors.New("connection refused, identifier rejected")
+	case ConnRefusedServerUnavailable:
+		return errors.New("connection refused, server unavailable")
+	case ConnRefusedBadUsernameOrPassword:
+		return errors.New("connection refused, bad user name or password")
+	case ConnRefusedNotAuthorised:
+		return errors.New("connection refused, not authorized")
+	}
+	return errors.New("connection refused, unknown error")
 }
