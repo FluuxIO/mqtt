@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	options := mqtt.ClientOptions{Address: "localhost:1883", Keepalive: 30}
+	options := mqtt.ClientOptions{Address: "localhost:1883", Keepalive: 30, ClientID: "MQTT-Sub"}
 	fmt.Printf("Server to connect to: %s\n", options.Address)
 
 	client, _ := mqtt.NewClient(options)

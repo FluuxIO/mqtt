@@ -137,6 +137,7 @@ func (c *Client) connect(retry bool) error {
 	// Send connect packet
 	connectPacket := packet.NewConnect()
 	connectPacket.SetKeepalive(c.options.Keepalive)
+	connectPacket.SetClientID(c.options.ClientID)
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 

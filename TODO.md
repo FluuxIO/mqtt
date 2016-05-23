@@ -13,10 +13,10 @@
 + Make connect synchronous. It is easy in Go to wrap the call to make it asynchronous: http://stackoverflow.com/a/6329459/559289
 + Reconnect with backoff strategy (basic)
 + Central place for errors definitions
++ Ability to set clientID.
 
 ## TODO
 
-- Ability to set clientID.
 - Handle teardown reconnect from either sender or receiver.
 - Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages
