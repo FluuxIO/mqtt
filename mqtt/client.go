@@ -173,10 +173,13 @@ func (c *Client) connect(retry bool) error {
 
 // get receiver tearDown signal, clean client state and trigger reconnect
 func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}) {
-	<-receiverDone
-	fmt.Println("After receiver done")
-	c.sender.quit <- struct{}{}
-	time.Sleep(time.Duration(60) * time.Second)
+	select {
+	case <-receiverDone:
+		c.sender.quit <- struct{}{}
+	case <-senderDone:
+		// We do nothing for now: As the sender closes socket, this should be enough to have read Loop
+		// fail and properly shutdown process.
+	}
 	go c.connect(true)
 }
 

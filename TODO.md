@@ -14,10 +14,10 @@
 + Reconnect with backoff strategy (basic)
 + Central place for errors definitions
 + Ability to set clientID.
++ Handle teardown & reconnect from either sender or receiver.
 
 ## TODO
 
-- Handle teardown reconnect from either sender or receiver.
 - Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages
 - Manage Packet ID during session.
