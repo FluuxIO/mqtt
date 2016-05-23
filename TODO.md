@@ -16,7 +16,9 @@
 
 ## TODO
 
-- We need to setup subscriptions on reconnect
+- Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
+  See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages
+- We need to setup subscriptions after background reconnect if there was not persistent session
 - Use URL scheme to define connection to server: tcp:// tls://
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
 - Support timeout on PingResp to trigger reconnect
