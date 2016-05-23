@@ -2,7 +2,6 @@ package packet
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -44,7 +43,7 @@ func readRemainingLength(r io.Reader) (int, error) {
 		value += uint32(encodedByte[0]&127) * multiplier
 		multiplier *= 128
 		if multiplier > 128*128*128 {
-			err = errors.New("mqtt: malformed remaining length")
+			err = ErrMalformedLength
 			return 0, err
 		}
 	}

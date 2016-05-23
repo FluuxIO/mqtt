@@ -1,6 +1,13 @@
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"errors"
+)
+
+const (
+	ErrMalformedLength = errors.New("malformed mqtt packet remaining length")
+)
 
 const (
 	reserved1Type   = iota

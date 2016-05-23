@@ -15,6 +15,10 @@ import (
 	"github.com/processone/gomqtt/mqtt/packet"
 )
 
+const (
+	ErrMalformedAddress = errors.New("malformed server address")
+)
+
 // Client is the main structure use to connect as a client on an MQTT
 // server.
 type Client struct {
@@ -61,7 +65,7 @@ func checkAddress(addr string) (string, error) {
 	var err error
 	hostport := strings.Split(addr, ":")
 	if len(hostport) > 2 {
-		err = errors.New("too many colons in server address")
+		err = ErrMalformedAddress
 		return addr, err
 	}
 
