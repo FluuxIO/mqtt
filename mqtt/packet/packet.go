@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-const (
+var (
 	ErrMalformedLength = errors.New("malformed mqtt packet remaining length")
 )
 

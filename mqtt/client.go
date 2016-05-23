@@ -15,7 +15,7 @@ import (
 	"github.com/processone/gomqtt/mqtt/packet"
 )
 
-const (
+var (
 	ErrMalformedAddress = errors.New("malformed server address")
 )
 
