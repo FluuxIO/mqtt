@@ -23,5 +23,6 @@ script:
   - go test -race --coverprofile=packet.coverprofile ./mqtt/packet
 
 after_script:
+  # gover aggregate several coverprofile into one for sending to coverage reporting tool:
   - gover
   - codeclimate-test-reporter < gover.coverprofile
