@@ -32,3 +32,4 @@
 - Certificate based authentication
 - More unit tests
 - Example of publish / subscribe sharing Go structures with encoding/gob (RPC like)
+- Support command-line option for examples (to pass server, port, username, ...)
