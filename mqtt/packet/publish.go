@@ -64,4 +64,3 @@ func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
 	}
 	return publish
 }
-
