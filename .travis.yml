@@ -9,6 +9,7 @@ go:
 install:
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/modocache/gover
+  - npm install codeclimate-test-reporter
   # Workaround for travis
   # - go get -t -v ./...
 
