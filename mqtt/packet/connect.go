@@ -59,6 +59,18 @@ func (c *Connect) Marshall() bytes.Buffer {
 	variablePart.Write(encodeUint16(keepalive))
 	variablePart.Write(encodeString(defineClientID(c.clientID)))
 
+	if c.willFlag && len(c.willTopic) > 0 {
+		variablePart.Write(encodeString(c.willTopic))
+		variablePart.Write(encodeString(c.willMessage))
+	}
+
+	if len(c.username) > 0 {
+		variablePart.Write(encodeString(c.username))
+		if len(c.password) > 0 {
+			variablePart.Write(encodeString(c.password))
+		}
+	}
+
 	fixedHeader := (connectType<<4 | fixedHeaderFlags)
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
@@ -101,3 +113,27 @@ func (c *Connect) connectFlag() int {
 		bool2int(willFlag)<<2 | bool2int(c.cleanSession)<<1)
 	return flag
 }
+
+/*
+// TODO
+func decodeConnect(payload []byte) *Connect {
+	connect := NewConnect()
+	connect.Dup = int2bool(fixedHeaderFlags >> 3)
+	connect.Qos = int((fixedHeaderFlags & 6) >> 1)
+	connect.Retain = int2bool((fixedHeaderFlags & 1))
+	var rest []byte
+	connect.Topic, rest = extractNextString(payload)
+	var index int
+	if len(rest) > 0 {
+		if connect.Qos == 1 || connect.Qos == 2 {
+			offset := 2
+			connect.ID = int(binary.BigEndian.Uint16(rest[:offset]))
+			index = offset
+		}
+		if len(rest) > index {
+			connect.Payload = rest[index:]
+		}
+	}
+	return connect
+}
+*/
