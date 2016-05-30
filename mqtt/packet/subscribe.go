@@ -12,7 +12,7 @@ type Subscribe struct {
 
 type Topic struct {
 	Name string
-	Qos  int
+	QOS  int
 }
 
 func (s *Subscribe) AddTopic(topic Topic) {
@@ -37,7 +37,7 @@ func (s *Subscribe) Marshall() bytes.Buffer {
 	for _, topic := range s.topics {
 		variablePart.Write(encodeString(topic.Name))
 		// TODO Check that QOS is valid
-		variablePart.WriteByte(byte(topic.Qos))
+		variablePart.WriteByte(byte(topic.QOS))
 	}
 
 	fixedHeaderFlags := 2 // mandatory value
@@ -57,7 +57,7 @@ func decodeSubscribe(payload []byte) *Subscribe {
 		topic := Topic{}
 		var rest []byte
 		topic.Name, rest = extractNextString(remaining)
-		topic.Qos = int(rest[0])
+		topic.QOS = int(rest[0])
 		subscribe.AddTopic(topic)
 		remaining = rest[1:]
 	}

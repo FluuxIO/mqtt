@@ -6,9 +6,9 @@ func TestSubscribeDecode(t *testing.T) {
 	subscribe := NewSubscribe()
 	subscribe.id = 2
 
-	t1 := Topic{Name: "test/topic", Qos: 0}
+	t1 := Topic{Name: "test/topic", QOS: 0}
 	subscribe.AddTopic(t1)
-	t2 := Topic{Name: "test2/*", Qos: 1}
+	t2 := Topic{Name: "test2/*", QOS: 1}
 	subscribe.AddTopic(t2)
 
 	buf := subscribe.Marshall()
@@ -27,13 +27,13 @@ func TestSubscribeDecode(t *testing.T) {
 			if parsedt1.Name != t1.Name {
 				t.Errorf("incorrect topic name (%q) = %q", parsedt1.Name, t1.Name)
 			}
-			if parsedt1.Qos != t1.Qos {
-				t.Errorf("incorrect topic qos (%q) = %q", parsedt1.Qos, t1.Qos)
+			if parsedt1.QOS != t1.QOS {
+				t.Errorf("incorrect topic qos (%q) = %q", parsedt1.QOS, t1.QOS)
 			}
 
 			parsedt2 := p.topics[1]
-			if parsedt2.Qos != t2.Qos {
-				t.Errorf("incorrect topic qos (%q) = %q", parsedt2.Qos, t2.Qos)
+			if parsedt2.QOS != t2.QOS {
+				t.Errorf("incorrect topic qos (%q) = %q", parsedt2.QOS, t2.QOS)
 			}
 		default:
 			t.Error("Incorrect packet type for subscribe")

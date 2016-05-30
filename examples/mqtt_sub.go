@@ -27,7 +27,7 @@ func main() {
 	}
 
 	name := "test/topic"
-	topic := packet.Topic{Name: name, Qos: 1}
+	topic := packet.Topic{Name: name, QOS: 1}
 	client.Subscribe(topic)
 
 	time.AfterFunc(time.Duration(15)*time.Second, func() {
