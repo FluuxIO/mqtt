@@ -22,7 +22,7 @@ func initReceiver(conn net.Conn, messageChannel chan *Message, s sender) <-chan 
 
 // Receive, decode and dispatch messages to the message channel
 func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message, s sender) {
-	var p packet.Packet
+	var p packet.Marshaller
 	var err error
 
 Loop:
@@ -55,7 +55,7 @@ Loop:
 }
 
 // Send acks if needed, depending on packet QOS
-func sendAckIfNeeded(pkt packet.Packet, s sender) {
+func sendAckIfNeeded(pkt packet.Marshaller, s sender) {
 	switch p := pkt.(type) {
 	case *packet.Publish:
 		if p.Qos == 1 {

@@ -28,8 +28,8 @@ const (
 	reserved2Type
 )
 
-// Packet interface shared by all MQTT control packets
-type Packet interface {
+// Marshaller interface is shared by all MQTT control packets
+type Marshaller interface {
 	Marshall() bytes.Buffer
 }
 
@@ -40,11 +40,6 @@ func NewConnect() *Connect {
 	connect.protocolName = protocolName
 	connect.protocolLevel = protocolLevel
 	return connect
-}
-
-// NewConnAck creates a CONNACK packet with default values
-func NewConnAck() *ConnAck {
-	return new(ConnAck)
 }
 
 // NewPublish creates an empty PUBLISH packet with default value.
@@ -88,7 +83,7 @@ func NewDisconnect() *Disconnect {
 }
 
 // Decode returns parsed struct from byte array
-func Decode(packetType int, fixedHeaderFlags int, payload []byte) Packet {
+func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	switch packetType {
 	case connectType:
 		return decodeConnect(payload)
