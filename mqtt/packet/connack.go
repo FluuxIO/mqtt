@@ -6,10 +6,6 @@ import (
 	"fmt"
 )
 
-type ConnAck struct {
-	ReturnCode int
-}
-
 const (
 	ConnAccepted                     = 0x00
 	ConnRefusedBadProtocolVersion    = 0x01
@@ -18,6 +14,10 @@ const (
 	ConnRefusedBadUsernameOrPassword = 0x04
 	ConnRefusedNotAuthorised         = 0x05
 )
+
+type ConnAck struct {
+	ReturnCode int
+}
 
 func (c *ConnAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
@@ -38,13 +38,12 @@ func (c *ConnAck) Marshall() bytes.Buffer {
 
 func decodeConnAck(payload []byte) *ConnAck {
 	connAck := new(ConnAck)
-	// MQTT 3.1.1: payload[0] is reserved for future use
+	// In MQTT 3.1.1, first byte (= payload[0]) is reserved for future use
 	connAck.ReturnCode = int(payload[1])
 	fmt.Printf("Return Code: %d\n", connAck.ReturnCode)
 	return connAck
 }
 
-// TODO define errors at beginning of the file
 func ConnAckError(returnCode int) error {
 	switch returnCode {
 	case ConnRefusedBadProtocolVersion:
