@@ -4,7 +4,7 @@ import "time"
 
 const (
 	keepaliveReset = iota
-	keepaliveStop  = iota
+	keepaliveStop
 )
 
 type keepaliveAction func()

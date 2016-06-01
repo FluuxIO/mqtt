@@ -10,22 +10,22 @@ var (
 )
 
 const (
-	reserved1Type   = iota
-	connectType     = iota
-	connackType     = iota
-	publishType     = iota
-	pubackType      = iota
-	pubrecType      = iota
-	pubrelType      = iota
-	pubcompType     = iota
-	subscribeType   = iota
-	subackType      = iota
-	unsubscribeType = iota
-	unsubackType    = iota
-	pingreqType     = iota
-	pingrespType    = iota
-	disconnectType  = iota
-	reserved2Type   = iota
+	reserved1Type = iota
+	connectType
+	connackType
+	publishType
+	pubackType
+	pubrecType
+	pubrelType
+	pubcompType
+	subscribeType
+	subackType
+	unsubscribeType
+	unsubackType
+	pingreqType
+	pingrespType
+	disconnectType
+	reserved2Type
 )
 
 // Packet interface shared by all MQTT control packets
