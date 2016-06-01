@@ -47,7 +47,6 @@ func main() {
 func quitDebugHandler() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGQUIT)
-	//	buf := make([]byte, 1<<20)
 	for {
 		<-sigs
 		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
