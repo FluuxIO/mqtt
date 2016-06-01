@@ -12,9 +12,11 @@ const (
 
 // Connect MQTT 3.1.1 control packet
 type Connect struct {
-	keepalive    int
-	clientID     string
-	cleanSession bool
+	protocolName  string
+	protocolLevel int
+	keepalive     int
+	clientID      string
+	cleanSession  bool
 	// TODO: Will should be a sub-struct
 	willFlag    bool
 	willTopic   string
@@ -57,11 +59,11 @@ func (c *Connect) Marshall() bytes.Buffer {
 	connectFlags := c.connectFlag()
 	keepalive := uint16(c.keepalive)
 
-	variablePart.Write(encodeString(protocolName))
-	variablePart.WriteByte(byte(protocolLevel))
+	variablePart.Write(encodeProtocolName(c.protocolName))
+	variablePart.WriteByte(encodeProtocolLevel(c.protocolLevel))
 	variablePart.WriteByte(byte(connectFlags))
 	variablePart.Write(encodeUint16(keepalive))
-	variablePart.Write(encodeString(defineClientID(c.clientID)))
+	variablePart.Write(encodeClientID(c.clientID))
 
 	if c.willFlag && len(c.willTopic) > 0 {
 		variablePart.Write(encodeString(c.willTopic))
@@ -83,11 +85,28 @@ func (c *Connect) Marshall() bytes.Buffer {
 	return packet
 }
 
-func defineClientID(clientID string) string {
-	if clientID == "" {
-		return defaultClientID
+func encodeClientID(clientID string) []byte {
+	id := defaultValue(clientID, defaultClientID)
+	return encodeString(id)
+}
+
+func encodeProtocolName(name string) []byte {
+	n := defaultValue(name, protocolName)
+	return encodeString(n)
+}
+
+func defaultValue(val string, defaultVal string) string {
+	if val == "" {
+		return defaultVal
 	}
-	return clientID
+	return val
+}
+
+func encodeProtocolLevel(level int) byte {
+	if level == 0 {
+		level = protocolLevel
+	}
+	return byte(level)
 }
 
 func (c *Connect) connectFlag() int {
@@ -116,6 +135,11 @@ func (c *Connect) connectFlag() int {
 	flag := (bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
 		bool2int(willFlag)<<2 | bool2int(c.cleanSession)<<1)
 	return flag
+}
+
+func decodeConnect(payload []byte) *Connect {
+	connect := NewConnect()
+	return connect
 }
 
 /*
