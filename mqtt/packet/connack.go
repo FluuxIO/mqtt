@@ -12,12 +12,23 @@ const (
 	ConnRefusedIDRejected            = 0x02
 	ConnRefusedServerUnavailable     = 0x03
 	ConnRefusedBadUsernameOrPassword = 0x04
-	ConnRefusedNotAuthorised         = 0x05
+	ConnRefusedNotAuthorized         = 0x05
+)
+
+var (
+	ErrConnRefusedBadProtocolVersion    = errors.New("connection refused, unacceptable protocol version")
+	ErrConnRefusedIDRejected            = errors.New("connection refused, identifier rejected")
+	ErrConnRefusedServerUnavailable     = errors.New("connection refused, server unavailable")
+	ErrConnRefusedBadUsernameOrPassword = errors.New("connection refused, bad user name or password")
+	ErrConnRefusedNotAuthorized         = errors.New("connection refused, not authorized")
+	ErrConnUnknown                      = errors.New("connection refused, unknown error")
 )
 
 type ConnAck struct {
 	ReturnCode int
 }
+
+// ============================================================================
 
 func (c *ConnAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
@@ -44,18 +55,20 @@ func decodeConnAck(payload []byte) *ConnAck {
 	return connAck
 }
 
+// ============================================================================
+
 func ConnAckError(returnCode int) error {
 	switch returnCode {
 	case ConnRefusedBadProtocolVersion:
-		return errors.New("connection refused, unacceptable protocol version")
+		return ErrConnRefusedBadProtocolVersion
 	case ConnRefusedIDRejected:
-		return errors.New("connection refused, identifier rejected")
+		return ErrConnRefusedIDRejected
 	case ConnRefusedServerUnavailable:
-		return errors.New("connection refused, server unavailable")
+		return ErrConnRefusedServerUnavailable
 	case ConnRefusedBadUsernameOrPassword:
-		return errors.New("connection refused, bad user name or password")
-	case ConnRefusedNotAuthorised:
-		return errors.New("connection refused, not authorized")
+		return ErrConnRefusedBadUsernameOrPassword
+	case ConnRefusedNotAuthorized:
+		return ErrConnRefusedNotAuthorized
 	}
-	return errors.New("connection refused, unknown error")
+	return ErrConnUnknown
 }
