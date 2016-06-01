@@ -29,6 +29,22 @@ func TestIncrementalConnectFlag(t *testing.T) {
 	assertConnectFlagValue(t, "incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag(), 246)
 }
 
+func TestConnectDecode(t *testing.T) {
+	connect := NewConnect()
+
+	buf := connect.Marshall()
+	if packet, err := Read(&buf); err != nil {
+		t.Errorf("cannot decode connect packet: %q", err)
+	} else {
+		switch p := packet.(type) {
+		case *Connect:
+			if p.protocolName != protocolName {
+				t.Errorf("incorrect protocol name (%q) = %q", p.protocolName, protocolName)
+			}
+		}
+	}
+}
+
 func assertConnectFlagValue(t *testing.T, message string, flag int, expected int) {
 	if flag != expected {
 		t.Errorf(message, flag)

@@ -89,6 +89,8 @@ func NewDisconnect() *Disconnect {
 // Decode returns parsed struct from byte array
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Packet {
 	switch packetType {
+	case connectType:
+		return decodeConnect(payload)
 	case connackType:
 		return decodeConnAck(payload)
 	case publishType:

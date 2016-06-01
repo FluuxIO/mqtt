@@ -139,11 +139,14 @@ func (c *Connect) connectFlag() int {
 
 func decodeConnect(payload []byte) *Connect {
 	connect := NewConnect()
+	var rest []byte
+	connect.protocolName, rest = extractNextString(payload)
+	connect.protocolLevel = int(rest[0])
 	return connect
 }
 
 /*
-// TODO
+// Example:
 func decodeConnect(payload []byte) *Connect {
 	connect := NewConnect()
 	connect.Dup = int2bool(fixedHeaderFlags >> 3)
