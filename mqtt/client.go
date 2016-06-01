@@ -22,8 +22,7 @@ const (
 )
 
 var (
-	ErrMalformedAddress     = errors.New("malformed server address")
-	ErrWrongConnectResponse = errors.New("incorrect connet response")
+	ErrWrongConnectResponse = errors.New("incorrect connect response")
 )
 
 // Client is the main structure use to connect as a client on an MQTT
