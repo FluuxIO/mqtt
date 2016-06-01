@@ -19,7 +19,7 @@ func main() {
 	options := mqtt.NewClientOptions("localhost:1883", "MQTT-Pub")
 	fmt.Printf("Server to connect to: %s\n", options.Address)
 
-	client, _ := mqtt.NewClient(options)
+	client := mqtt.New(options)
 	if err := client.Connect(); err != nil {
 		fmt.Printf("Connection error: %q\n", err)
 		return

@@ -8,11 +8,17 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/processone/gomqtt/mqtt/packet"
+)
+
+const (
+	stateConnecting = iota
+	stateConnected
+	stateReconnecting
+	stateDisconnected
 )
 
 var (
@@ -36,13 +42,6 @@ type Client struct {
 // We also should abstract the Message to hide the details of the protocol from the developer client: MQTT protocol could
 // change on the wire, but we can likely keep the same internal format for publish messages received.
 
-const (
-	stateConnecting   = iota
-	stateConnected    = iota
-	stateReconnecting = iota
-	stateDisconnected = iota
-)
-
 // Message encapsulates Publish MQTT payload from the MQTT client perspective.
 type Message struct {
 	Topic   string
@@ -51,32 +50,10 @@ type Message struct {
 
 // NewClient generates a new MQTT client, based on Options passed as parameters.
 // Default the port to 1883.
-func NewClient(options *ClientOptions) (c *Client, err error) {
-	if options.Address, err = checkAddress(options.Address); err != nil {
-		return
+func New(options *ClientOptions) *Client {
+	return &Client{
+		options: options,
 	}
-
-	c = new(Client)
-	c.options = options
-
-	return
-}
-
-func checkAddress(addr string) (string, error) {
-	var err error
-	hostport := strings.Split(addr, ":")
-	if len(hostport) > 2 {
-		err = ErrMalformedAddress
-		return addr, err
-	}
-
-	// Address is composed of two parts, we are good
-	if len(hostport) == 2 && hostport[1] != "" {
-		return addr, err
-	}
-
-	// Port was not passed, we append default MQTT port:
-	return strings.Join([]string{hostport[0], "1883"}, ":"), err
 }
 
 // Connect initiates synchronous connection to MQTT server
@@ -190,14 +167,27 @@ func (c *Client) send(buf *bytes.Buffer) {
 	sender.send(buf)
 }
 
+// ============================================================================
+// sender setter / getter
+// TODO: Probably it is not sended as we probably do not need to really reset
+// sender on reconnect
+
+// setSender is used to protect against race on reconnect.
 func (c *Client) setSender(sender sender) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.sender = sender
+	{
+		c.sender = sender
+	}
+	c.mu.Unlock()
 }
 
+// getSender is used to protect against race on reconnect.
 func (c *Client) getSender() sender {
+	var s sender
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.sender
+	{
+		s = c.sender
+	}
+	c.mu.RUnlock()
+	return s
 }
