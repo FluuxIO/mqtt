@@ -54,15 +54,22 @@ func New(options *ClientOptions) *Client {
 	}
 }
 
-// Connect initiates synchronous connection to MQTT server
+// ============================================================================
+
+// Connect initiates synchronous connection to MQTT server and performs MQTT
+// connect handshake.
 func (c *Client) Connect() error {
 	return c.connect(false)
 }
 
-// ReadNext can be called from client to readNext message
-func (c *Client) ReadNext() *Message {
-	return <-c.message
+// Disconnect sends DISCONNECT MQTT packet to other party and clean up the client
+// state.
+func (c *Client) Disconnect() {
+	c.send(packet.NewDisconnect())
+	// TODO Properly terminates receiver and sender and close message channel
 }
+
+// ============================================================================
 
 // TODO Serialize packet send into its own channel / go routine
 //
@@ -79,6 +86,8 @@ func (c *Client) Unsubscribe(topic string) {
 	c.send(unsubscribe)
 }
 
+// ============================================================================
+
 func (c *Client) Publish(topic string, payload []byte) {
 	publish := packet.NewPublish()
 	publish.SetTopic(topic)
@@ -86,11 +95,13 @@ func (c *Client) Publish(topic string, payload []byte) {
 	c.send(publish)
 }
 
-// Disconnect sends DISCONNECT MQTT packet to other party
-func (c *Client) Disconnect() {
-	c.send(packet.NewDisconnect())
-	// TODO Properly terminates receiver and sender and close message channel
+// ReadNext can be called from client to readNext message
+func (c *Client) ReadNext() *Message {
+	return <-c.message
 }
+
+// ============================================================================
+// Internal
 
 func (c *Client) connect(retry bool) error {
 	fmt.Println("Trying to connect")
@@ -155,6 +166,8 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	}
 	go c.connect(true)
 }
+
+// ============================================================================
 
 func (c *Client) send(packet packet.Marshaller) {
 	buf := packet.Marshall()
