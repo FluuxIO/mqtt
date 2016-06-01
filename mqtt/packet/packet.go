@@ -82,6 +82,7 @@ func NewDisconnect() *Disconnect {
 	return new(Disconnect)
 }
 
+// TODO Should probably go in a decode.go file
 // Decode returns parsed struct from byte array
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	switch packetType {
