@@ -38,6 +38,10 @@ func (c *Connect) SetClientID(clientID string) {
 	c.clientID = clientID
 }
 
+func (c *Connect) SetCleanSession(flag bool) {
+	c.cleanSession = flag
+}
+
 func (c *Connect) SetWill(topic string, message string, qos int) {
 	c.willFlag = true
 	c.willQOS = qos

@@ -15,6 +15,7 @@
 + Central place for errors definitions
 + Ability to set clientID.
 + Handle teardown & reconnect from either sender or receiver.
++ Support persistent session option
 
 ## TODO
 

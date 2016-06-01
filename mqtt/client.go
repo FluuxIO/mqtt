@@ -138,6 +138,7 @@ func (c *Client) connect(retry bool) error {
 	connectPacket := packet.NewConnect()
 	connectPacket.SetKeepalive(c.options.Keepalive)
 	connectPacket.SetClientID(c.options.ClientID)
+	connectPacket.SetCleanSession(!c.options.PersistentSession)
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
