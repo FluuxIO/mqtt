@@ -4,7 +4,6 @@ MQTT package implements MQTT protocol. It can be use as a client library to writ
 package mqtt
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -71,29 +70,25 @@ func (c *Client) ReadNext() *Message {
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
 	subscribe.AddTopic(topic)
-	buf := subscribe.Marshall()
-	c.send(&buf)
+	c.send(subscribe)
 }
 
 func (c *Client) Unsubscribe(topic string) {
 	unsubscribe := packet.NewUnsubscribe()
 	unsubscribe.AddTopic(topic)
-	buf := unsubscribe.Marshall()
-	c.send(&buf)
+	c.send(unsubscribe)
 }
 
 func (c *Client) Publish(topic string, payload []byte) {
 	publish := packet.NewPublish()
 	publish.SetTopic(topic)
 	publish.SetPayload(payload)
-	buf := publish.Marshall()
-	c.send(&buf)
+	c.send(publish)
 }
 
 // Disconnect sends DISCONNECT MQTT packet to other party
 func (c *Client) Disconnect() {
-	buf := packet.NewDisconnect().Marshall()
-	c.send(&buf)
+	c.send(packet.NewDisconnect())
 	// TODO Properly terminates receiver and sender and close message channel
 }
 
@@ -161,9 +156,10 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	go c.connect(true)
 }
 
-func (c *Client) send(buf *bytes.Buffer) {
+func (c *Client) send(packet packet.Marshaller) {
+	buf := packet.Marshall()
 	sender := c.getSender()
-	sender.send(buf)
+	sender.send(&buf)
 }
 
 // ============================================================================
