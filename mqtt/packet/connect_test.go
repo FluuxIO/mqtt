@@ -2,36 +2,35 @@ package packet
 
 import "testing"
 
-// TODO: Refactor test
 // TODO: Test incorrect will QOS
-func TestConnectFlag(t *testing.T) {
+func TestIncrementalConnectFlag(t *testing.T) {
 	c := Connect{}
+	assertConnectFlagValue(t, "incorrect connect flag: default connect flag should be empty (%d)", c.connectFlag(), 0)
+
 	c.cleanSession = true
-	if c.connectFlag() != 2 {
-		t.Errorf("incorrect connect flag: cleanSession is not true (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: cleanSession is not true (%d)", c.connectFlag(), 2)
+
 	c.SetWill("topic/a", "Disconnected", 0)
-	if c.connectFlag() != 6 {
-		t.Errorf("incorrect connect flag: willFlag is not true (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: willFlag is not true (%d)", c.connectFlag(), 6)
+
 	c.SetWill("topic/a", "Disconnected", 1)
-	if c.connectFlag() != 14 {
-		t.Errorf("incorrect connect flag: willQOS is not properly set (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: willQOS is not properly set (%d)", c.connectFlag(), 14)
+
 	c.SetWill("topic/a", "Disconnected", 2)
-	if c.connectFlag() != 22 {
-		t.Errorf("incorrect connect flag: willQOS is not properly set (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: willQOS is not properly set (%d)", c.connectFlag(), 22)
+
 	c.willRetain = true
-	if c.connectFlag() != 54 {
-		t.Errorf("incorrect connect flag: willRetain is not properly set (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: willRetain is not properly set (%d)", c.connectFlag(), 54)
+
 	c.username = "User1"
-	if c.connectFlag() != 118 {
-		t.Errorf("incorrect connect flag: usernameFlag is not properly set (%d)", c.connectFlag())
-	}
+	assertConnectFlagValue(t, "incorrect connect flag: usernameFlag is not properly set (%d)", c.connectFlag(), 118)
+
 	c.password = "Password"
-	if c.connectFlag() != 246 {
-		t.Errorf("incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag())
+	assertConnectFlagValue(t, "incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag(), 246)
+}
+
+func assertConnectFlagValue(t *testing.T, message string, flag int, expected int) {
+	if flag != expected {
+		t.Errorf(message, flag)
 	}
 }
