@@ -9,9 +9,9 @@ go:
 install:
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/modocache/gover
+  # codeclimate-test-reporter sends test cover profiles aggregated by gover to codeclimate:
+  # It relies on securely encrypted token in env variable CODECLIMATE_REPO_TOKEN
   - npm install codeclimate-test-reporter
-  # Workaround for travis
-  # - go get -t -v ./...
 
 env:
   # CODECLIMATE_REPO_TOKEN
