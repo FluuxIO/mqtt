@@ -25,7 +25,7 @@ var (
 type Client struct {
 	mu sync.RWMutex
 	// Store user defined options
-	options ClientOptions
+	options *ClientOptions
 	backoff backoff
 	message chan *Message
 	sender  sender
@@ -51,7 +51,7 @@ type Message struct {
 
 // NewClient generates a new MQTT client, based on Options passed as parameters.
 // Default the port to 1883.
-func NewClient(options ClientOptions) (c *Client, err error) {
+func NewClient(options *ClientOptions) (c *Client, err error) {
 	if options.Address, err = checkAddress(options.Address); err != nil {
 		return
 	}
@@ -136,9 +136,10 @@ func (c *Client) connect(retry bool) error {
 	// 1. Open session - Login
 	// Send connect packet
 	connectPacket := packet.NewConnect()
+	// FIXME: client does not work properly if keepalive is 0
 	connectPacket.SetKeepalive(c.options.Keepalive)
 	connectPacket.SetClientID(c.options.ClientID)
-	connectPacket.SetCleanSession(!c.options.PersistentSession)
+	connectPacket.SetCleanSession(c.options.CleanSession)
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 

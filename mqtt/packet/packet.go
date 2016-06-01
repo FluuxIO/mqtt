@@ -38,6 +38,8 @@ type Packet interface {
 func NewConnect() *Connect {
 	connect := new(Connect)
 	connect.keepalive = 30
+	connect.protocolName = protocolName
+	connect.protocolLevel = protocolLevel
 	return connect
 }
 
