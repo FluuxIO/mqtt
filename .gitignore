@@ -27,3 +27,5 @@ coverage.out
 .idea/
 *.iml
 .DS_Store
+
+*.coverprofile
