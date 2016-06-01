@@ -19,10 +19,6 @@ func (s *Subscribe) AddTopic(topic Topic) {
 	s.topics = append(s.topics, topic)
 }
 
-func (s *Subscribe) PacketType() int {
-	return subscribeType
-}
-
 func (s *Subscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

@@ -27,11 +27,6 @@ type Connect struct {
 	password    string
 }
 
-// PacketType returns packet type numerical value
-func (c *Connect) PacketType() int {
-	return connectType
-}
-
 func (c *Connect) SetKeepalive(keepalive int) {
 	c.keepalive = keepalive
 }

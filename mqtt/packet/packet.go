@@ -31,7 +31,6 @@ const (
 // Packet interface shared by all MQTT control packets
 type Packet interface {
 	Marshall() bytes.Buffer
-	PacketType() int
 }
 
 // NewConnect creates a CONNECT packet with default values

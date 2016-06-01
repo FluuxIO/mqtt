@@ -10,10 +10,6 @@ type SubAck struct {
 	returnCodes []int
 }
 
-func (s *SubAck) PacketType() int {
-	return subackType
-}
-
 func (s *SubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

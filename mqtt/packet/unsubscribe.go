@@ -14,10 +14,6 @@ func (u *Unsubscribe) AddTopic(topic string) {
 	u.topics = append(u.topics, topic)
 }
 
-func (u *Unsubscribe) PacketType() int {
-	return unsubscribeType
-}
-
 func (u *Unsubscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

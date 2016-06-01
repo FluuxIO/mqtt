@@ -19,10 +19,6 @@ const (
 	ConnRefusedNotAuthorised         = 0x05
 )
 
-func (c *ConnAck) PacketType() int {
-	return connackType
-}
-
 func (c *ConnAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

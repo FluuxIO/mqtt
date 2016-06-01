@@ -9,10 +9,6 @@ type UnsubAck struct {
 	id int
 }
 
-func (u *UnsubAck) PacketType() int {
-	return unsubackType
-}
-
 func (u *UnsubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

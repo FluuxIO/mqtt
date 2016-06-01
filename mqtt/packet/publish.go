@@ -22,10 +22,6 @@ func (p *Publish) SetPayload(payload []byte) {
 	p.Payload = payload
 }
 
-func (p *Publish) PacketType() int {
-	return publishType
-}
-
 func (p *Publish) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

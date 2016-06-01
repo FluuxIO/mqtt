@@ -9,10 +9,6 @@ type PubAck struct {
 	id int
 }
 
-func (s *PubAck) PacketType() int {
-	return pubackType
-}
-
 func (s *PubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

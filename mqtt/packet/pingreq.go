@@ -5,10 +5,6 @@ import "bytes"
 type PingReq struct {
 }
 
-func (p *PingReq) PacketType() int {
-	return pingreqType
-}
-
 func (c *PingReq) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 	fixedHeaderFlags := 0
