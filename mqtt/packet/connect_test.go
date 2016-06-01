@@ -38,12 +38,14 @@ func TestConnectDecode(t *testing.T) {
 	} else {
 		switch p := packet.(type) {
 		case *Connect:
-			if p.protocolName != protocolName {
-				t.Errorf("incorrect protocol name (%q) = %q", p.protocolName, protocolName)
+			if *p != *connect {
+				t.Errorf("unmarshalled connect does not match original (%+v) = %+v", p, connect)
 			}
 		}
 	}
 }
+
+// Helpers
 
 func assertConnectFlagValue(t *testing.T, message string, flag int, expected int) {
 	if flag != expected {
