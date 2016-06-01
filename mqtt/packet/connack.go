@@ -44,6 +44,7 @@ func decodeConnAck(payload []byte) *ConnAck {
 	return connAck
 }
 
+// TODO define errors at beginning of the file
 func ConnAckError(returnCode int) error {
 	switch returnCode {
 	case ConnRefusedBadProtocolVersion:
