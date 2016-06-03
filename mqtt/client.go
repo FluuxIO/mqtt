@@ -24,12 +24,42 @@ var (
 	ErrWrongConnectResponse = errors.New("incorrect connect response")
 )
 
+//=============================================================================
+
+// OptConnect defines optional MQTT connection parameters.
+// MQTT client libraries will default to sensible values.
+type OptConnect struct {
+	ClientID     string
+	Keepalive    int
+	CleanSession bool
+}
+
+// Config provides a data structure of required configuration parameters for MQTT connection
+type Config struct {
+	Address string
+
+	// *************************************************************************
+	// ** Not Required, optional                                              **
+	// *************************************************************************
+	OptConnect
+}
+
+//=============================================================================
+
+// Message encapsulates Publish MQTT payload from the MQTT client perspective.
+type Message struct {
+	Topic   string
+	Payload []byte
+}
+
+//=============================================================================
+
 // Client is the main structure use to connect as a client on an MQTT
 // server.
 type Client struct {
-	mu sync.RWMutex
-	// Store user defined options
-	options *ClientOptions
+	Config
+
+	mu      sync.RWMutex
 	backoff backoff
 	message chan *Message
 	sender  sender
@@ -40,17 +70,18 @@ type Client struct {
 // We also should abstract the Message to hide the details of the protocol from the developer client: MQTT protocol could
 // change on the wire, but we can likely keep the same internal format for publish messages received.
 
-// Message encapsulates Publish MQTT payload from the MQTT client perspective.
-type Message struct {
-	Topic   string
-	Payload []byte
-}
-
-// NewClient generates a new MQTT client, based on Options passed as parameters.
-// Default the port to 1883.
-func New(options *ClientOptions) *Client {
+// NewClient generates a new MQTT client with default parameters. Server must be set as we cannot find relevant default
+// value for server
+func New(address string) *Client {
 	return &Client{
-		options: options,
+		Config: Config{
+			Address: address,
+			// As default we do not want to use a persistent session:
+			OptConnect: OptConnect{
+				Keepalive:    30,
+				CleanSession: true,
+			},
+		},
 	}
 }
 
@@ -105,7 +136,7 @@ func (c *Client) ReadNext() *Message {
 
 func (c *Client) connect(retry bool) error {
 	fmt.Println("Trying to connect")
-	conn, err := net.DialTimeout("tcp", c.options.Address, 5*time.Second)
+	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
 		if !retry {
 			return err
@@ -119,9 +150,9 @@ func (c *Client) connect(retry bool) error {
 	// Send connect packet
 	connectPacket := packet.NewConnect()
 	// FIXME: client does not work properly if keepalive is 0
-	connectPacket.SetKeepalive(c.options.Keepalive)
-	connectPacket.SetClientID(c.options.ClientID)
-	connectPacket.SetCleanSession(c.options.CleanSession)
+	connectPacket.SetKeepalive(c.Keepalive)
+	connectPacket.SetClientID(c.ClientID)
+	connectPacket.SetCleanSession(c.CleanSession)
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
@@ -147,7 +178,7 @@ func (c *Client) connect(retry bool) error {
 		c.message = make(chan *Message)
 	}
 
-	c.setSender(initSender(conn, c.options.Keepalive))
+	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
 	tearDown := initReceiver(conn, c.message, c.sender)
 	// Routine to watch for disconnect event and trigger reconnect

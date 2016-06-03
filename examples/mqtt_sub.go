@@ -17,10 +17,10 @@ import (
 )
 
 func main() {
-	options := mqtt.NewClientOptions("localhost:1883", "MQTT-Sub")
-	fmt.Printf("Server to connect to: %s\n", options.Address)
+	client := mqtt.New("localhost:1883")
+	client.ClientID = "MQTT-Sub"
+	fmt.Printf("Server to connect to: %s\n", client.Address)
 
-	client := mqtt.New(options)
 	if err := client.Connect(); err != nil {
 		fmt.Printf("Connection error: %q\n", err)
 		return
