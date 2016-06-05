@@ -12,6 +12,7 @@ func Read(r io.Reader) (Marshaller, error) {
 	fixedHeader := make([]byte, 1)
 
 	if _, err = io.ReadFull(r, fixedHeader); err != nil {
+		fmt.Printf("Read error %q", err.Error())
 		return nil, err
 	}
 

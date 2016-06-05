@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	ErrWrongConnectResponse = errors.New("incorrect connect response")
+	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
 )
 
 //=============================================================================
@@ -30,8 +30,13 @@ var (
 // MQTT client libraries will default to sensible values.
 type OptConnect struct {
 	ClientID     string
-	Keepalive    int
+	Keepalive    int // TODO Keepalive should also probably be a time.Duration for more flexibility
 	CleanSession bool
+}
+
+// OptTCP defines TCP/IP related parameters.
+type OptTCP struct {
+	ConnectTimeout time.Duration
 }
 
 // Config provides a data structure of required configuration parameters for MQTT connection
@@ -42,11 +47,13 @@ type Config struct {
 	// ** Not Required, optional                                              **
 	// *************************************************************************
 	OptConnect
+	OptTCP
 }
 
 //=============================================================================
 
 // Message encapsulates Publish MQTT payload from the MQTT client perspective.
+// Message is used to abstract the detail of the MQTT protocol to the developer.
 type Message struct {
 	Topic   string
 	Payload []byte
@@ -67,8 +74,6 @@ type Client struct {
 
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
 // about the publish we have received)
-// We also should abstract the Message to hide the details of the protocol from the developer client: MQTT protocol could
-// change on the wire, but we can likely keep the same internal format for publish messages received.
 
 // NewClient generates a new MQTT client with default parameters. Server must be set as we cannot find relevant default
 // value for server
@@ -80,6 +85,9 @@ func New(address string) *Client {
 			OptConnect: OptConnect{
 				Keepalive:    30,
 				CleanSession: true,
+			},
+			OptTCP: OptTCP{
+				ConnectTimeout: time.Duration(30000) * time.Millisecond,
 			},
 		},
 	}
@@ -156,6 +164,7 @@ func (c *Client) connect(retry bool) error {
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
+	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
 	if connack, err := packet.Read(conn); err != nil {
 		return err
 	} else {
@@ -167,9 +176,10 @@ func (c *Client) connect(retry bool) error {
 				return packet.ConnAckError(p.ReturnCode)
 			}
 		default:
-			return ErrWrongConnectResponse
+			return ErrIncorrectConnectResponse
 		}
 	}
+	conn.SetReadDeadline(time.Time{})
 
 	// 2. Connected. We set environment up
 	c.backoff.Reset()
