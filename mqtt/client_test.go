@@ -9,6 +9,8 @@ import (
 )
 
 const (
+	// Default port is not standard MQTT port to avoid interfering
+	// with local running MQTT server
 	testMQTTAddress = "localhost:10883"
 )
 
