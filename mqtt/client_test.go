@@ -4,6 +4,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 const (
@@ -24,6 +26,21 @@ func TestClient_ConnectTimeout(t *testing.T) {
 		if neterr, ok := err.(net.Error); ok && !neterr.Timeout() {
 			t.Error("MQTT connection should timeout")
 		}
+	}
+}
+
+func TestClient_Connect(t *testing.T) {
+	done := make(chan struct{})
+	go mqttServerMock(t, done, func(c net.Conn) {
+		ack := packet.ConnAck{}
+		buf := ack.Marshall()
+		buf.WriteTo(c)
+	})
+	defer close(done)
+
+	client := New(testMQTTAddress)
+	if err := client.Connect(); err != nil {
+		t.Error("MQTT connection failed")
 	}
 }
 
