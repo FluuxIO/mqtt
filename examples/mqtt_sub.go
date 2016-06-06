@@ -17,7 +17,8 @@ import (
 )
 
 func main() {
-	client := mqtt.New("localhost:1883")
+	messages := make(chan *mqtt.Message)
+	client := mqtt.New("localhost:1883", messages)
 	client.ClientID = "MQTT-Sub"
 	fmt.Printf("Server to connect to: %s\n", client.Address)
 
@@ -38,9 +39,8 @@ func main() {
 	// Can be commented out
 	go quitDebugHandler()
 
-	for {
-		s2 := client.ReadNext()
-		fmt.Printf("Received packet from Server on %s: %+v\n", s2.Topic, s2.Payload)
+	for m := range messages {
+		fmt.Printf("Received message from MQTT server on topic %s: %+v\n", m.Topic, m.Payload)
 	}
 }
 

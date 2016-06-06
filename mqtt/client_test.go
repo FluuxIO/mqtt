@@ -17,11 +17,13 @@ const (
 // TestClient_ConnectTimeout checks that connect will properly timeout and not
 // block forever if server never send CONNACK.
 func TestClient_ConnectTimeout(t *testing.T) {
+	// Setup Mock server
 	done := make(chan struct{})
 	go mqttServerMock(t, done, func(c net.Conn) { return })
 	defer close(done)
 
-	client := New(testMQTTAddress)
+	// Test / Check result
+	client := New(testMQTTAddress, nil)
 	client.ConnectTimeout = 100 * time.Millisecond
 
 	if err := client.Connect(); err != nil {
@@ -32,15 +34,13 @@ func TestClient_ConnectTimeout(t *testing.T) {
 }
 
 func TestClient_Connect(t *testing.T) {
+	// Setup Mock server
 	done := make(chan struct{})
-	go mqttServerMock(t, done, func(c net.Conn) {
-		ack := packet.ConnAck{}
-		buf := ack.Marshall()
-		buf.WriteTo(c)
-	})
+	go mqttServerMock(t, done, handlerConnackSuccess)
 	defer close(done)
 
-	client := New(testMQTTAddress)
+	// Test / Check result
+	client := New(testMQTTAddress, nil)
 	if err := client.Connect(); err != nil {
 		t.Error("MQTT connection failed")
 	}
@@ -84,4 +84,12 @@ func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept 
 		close(stopAccept)
 		listener.Close()
 	}
+}
+
+//=============================================================================
+
+func handlerConnackSuccess(c net.Conn) {
+	ack := packet.ConnAck{}
+	buf := ack.Marshall()
+	buf.WriteTo(c)
 }

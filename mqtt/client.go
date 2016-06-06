@@ -66,21 +66,30 @@ type Message struct {
 type Client struct {
 	Config
 
+	Messages chan<- *Message
+
 	mu      sync.RWMutex
 	backoff backoff
-	message chan *Message
 	sender  sender
 }
 
-// TODO split channel between status signals (informing about the state of the client) and message received (informing
-// about the publish we have received)
-
-// New generates a new MQTT client with default parameters. Server must be set as we cannot find relevant default
-// value for server
-func New(address string) *Client {
+// New generates a new MQTT client with default parameters. Address must be set as we cannot find relevant default
+// value for server. We also must have a default channel: If the connection is persistent, it is possible
+// that we receive messages coming from previous connection even if we do not subscribe
+// to anything in that session of the client. Having a default channel makes sure we always
+// have a way to receive all messages.
+// The channel will be closed when the session is closed and no further automatic reconnection will
+// be attempted. You can use that close signal to reconnect the client if you wish to, immediately
+// or after a delay.
+// The channel is expected to be passed by the caller because it allows the caller to pass a channel
+// with a buffer size suiting its own use case and expected throughput.
+func New(address string, defaultMsgChannel chan<- *Message) *Client {
 	return &Client{
+		Messages: defaultMsgChannel,
+
 		Config: Config{
 			Address: address,
+
 			// As default we do not want to use a persistent session:
 			OptConnect: OptConnect{
 				Keepalive:    30,
@@ -134,11 +143,6 @@ func (c *Client) Publish(topic string, payload []byte) {
 	c.send(publish)
 }
 
-// ReadNext can be called from client to readNext message
-func (c *Client) ReadNext() *Message {
-	return <-c.message
-}
-
 // ============================================================================
 // Internal
 
@@ -183,14 +187,10 @@ func (c *Client) connect(retry bool) error {
 
 	// 2. Connected. We set environment up
 	c.backoff.Reset()
-	// For now we do not need to change the message channel
-	if c.message == nil {
-		c.message = make(chan *Message)
-	}
 
 	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
-	tearDown := initReceiver(conn, c.message, c.sender)
+	tearDown := initReceiver(conn, c.Messages, c.sender)
 	// Routine to watch for disconnect event and trigger reconnect
 	go c.disconnected(tearDown, c.sender.done)
 	return nil

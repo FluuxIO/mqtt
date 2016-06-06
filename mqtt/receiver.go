@@ -14,7 +14,7 @@ import (
 // - Error send channel to trigger teardown
 // - MessageSendChannel to dispatch messages to client
 
-func initReceiver(conn net.Conn, messageChannel chan *Message, s sender) <-chan struct{} {
+func initReceiver(conn net.Conn, messageChannel chan<- *Message, s sender) <-chan struct{} {
 	tearDown := make(chan struct{})
 	go receiver(conn, tearDown, messageChannel, s)
 	return tearDown
