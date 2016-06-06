@@ -46,6 +46,22 @@ func TestClient_Connect(t *testing.T) {
 	}
 }
 
+func TestClient_KeepAliveDisable(t *testing.T) {
+	// Setup Mock server
+	done := make(chan struct{})
+	go mqttServerMock(t, done, handlerConnackSuccess)
+	defer close(done)
+
+	// Test / Check result
+	client := New(testMQTTAddress, nil)
+	client.Keepalive = 0
+	if err := client.Connect(); err != nil {
+		t.Error("MQTT connection failed")
+	}
+	// TODO Check that client does not send PINGREQ to server when keep alive is 0.
+	// keepalive 0 should disable keep alive.
+}
+
 //=============================================================================
 // Mock MQTT server for testing client
 

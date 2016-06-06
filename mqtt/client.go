@@ -119,8 +119,6 @@ func (c *Client) Disconnect() {
 
 // ============================================================================
 
-// TODO Serialize packet send into its own channel / go routine
-//
 // FIXME(mr) packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.NewSubscribe()
@@ -161,7 +159,6 @@ func (c *Client) connect(retry bool) error {
 	// 1. Open session - Login
 	// Send connect packet
 	connectPacket := packet.NewConnect()
-	// FIXME: client does not work properly if keepalive is 0
 	connectPacket.SetKeepalive(c.Keepalive)
 	connectPacket.SetClientID(c.ClientID)
 	connectPacket.SetCleanSession(c.CleanSession)

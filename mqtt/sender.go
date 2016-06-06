@@ -26,11 +26,14 @@ func initSender(conn net.Conn, keepalive int) sender {
 	quit := make(chan struct{})
 
 	// Start go routine that manage keepalive timer:
-	keepaliveCtl := startKeepalive(keepalive, func() {
-		pingReq := packet.NewPingReq()
-		buf := pingReq.Marshall()
-		buf.WriteTo(conn)
-	})
+	var keepaliveCtl chan int
+	if keepalive > 0 {
+		keepaliveCtl = startKeepalive(keepalive, func() {
+			pingReq := packet.NewPingReq()
+			buf := pingReq.Marshall()
+			buf.WriteTo(conn)
+		})
+	}
 
 	s := sender{done: tearDown, out: out, quit: quit}
 	go senderLoop(conn, keepaliveCtl, out, quit, tearDown)
@@ -43,7 +46,7 @@ Loop:
 		select {
 		case buf := <-out:
 			buf.WriteTo(conn) // TODO Trigger teardown and stop on write error
-			keepaliveCtl <- keepaliveReset
+			keepaliveSignal(keepaliveCtl, keepaliveReset)
 		case <-quit:
 			// Client want this sender to terminate
 			terminateSender(conn, keepaliveCtl)
@@ -58,6 +61,15 @@ func (s sender) send(buf *bytes.Buffer) {
 
 // Clean-up:
 func terminateSender(conn net.Conn, keepaliveCtl chan int) {
-	keepaliveCtl <- keepaliveStop
+	keepaliveSignal(keepaliveCtl, keepaliveStop)
 	conn.Close()
+}
+
+// keepaliveSignal sends keepalive commands on keepalive channel
+// if keepalive is not disabled.
+func keepaliveSignal(keepaliveCtl chan<- int, signal int) {
+	if keepaliveCtl == nil {
+		return
+	}
+	keepaliveCtl <- signal
 }
