@@ -218,7 +218,7 @@ func (c *Client) send(packet packet.Marshaller) {
 
 // ============================================================================
 // sender setter / getter
-// TODO: Probably it is not sended as we probably do not need to really reset
+// TODO: Probably it is not needed as we probably do not need to really reset
 // sender on reconnect
 
 // setSender is used to protect against race on reconnect.
