@@ -87,7 +87,7 @@ func New(address string) *Client {
 				CleanSession: true,
 			},
 			OptTCP: OptTCP{
-				ConnectTimeout: time.Duration(30000) * time.Millisecond,
+				ConnectTimeout: 30000 * time.Millisecond,
 			},
 		},
 	}

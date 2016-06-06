@@ -22,7 +22,7 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	defer close(done)
 
 	client := New(testMQTTAddress)
-	client.ConnectTimeout = time.Duration(100) * time.Millisecond
+	client.ConnectTimeout = 100 * time.Millisecond
 
 	if err := client.Connect(); err != nil {
 		if neterr, ok := err.(net.Error); ok && !neterr.Timeout() {

@@ -29,7 +29,7 @@ func main() {
 	// Can be commented out
 	go quitDebugHandler()
 
-	ticker := time.NewTicker(time.Duration(5) * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	stop := make(chan bool)
 	go tickLoop(client, ticker, stop)
 

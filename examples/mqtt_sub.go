@@ -30,7 +30,7 @@ func main() {
 	topic := packet.Topic{Name: name, QOS: 1}
 	client.Subscribe(topic)
 
-	time.AfterFunc(time.Duration(15)*time.Second, func() {
+	time.AfterFunc(15*time.Second, func() {
 		client.Unsubscribe(name)
 	})
 
