@@ -75,7 +75,7 @@ type Client struct {
 // TODO split channel between status signals (informing about the state of the client) and message received (informing
 // about the publish we have received)
 
-// NewClient generates a new MQTT client with default parameters. Server must be set as we cannot find relevant default
+// New generates a new MQTT client with default parameters. Server must be set as we cannot find relevant default
 // value for server
 func New(address string) *Client {
 	return &Client{
