@@ -17,6 +17,7 @@ The functions for Backoff are not threadsafe, but you can:
 - Use lock in your own code to protect the Backoff structure.
 
 TODO: Implement Backoff Ticker channel
+TODO: Implement throttler interface. Throttler could be used to implement various reconnect strategies.
 */
 
 package mqtt
