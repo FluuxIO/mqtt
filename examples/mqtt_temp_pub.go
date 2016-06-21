@@ -20,13 +20,13 @@ func main() {
 		log.Fatal("Connection error: ", err)
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
 	stop := make(chan bool)
-	go publishLoop(client, ticker, stop)
+	go publishLoop(client, stop)
 	runtime.Goexit()
 }
 
-func publishLoop(client *mqtt.Client, ticker *time.Ticker, stop <-chan bool) {
+func publishLoop(client *mqtt.Client, stop <-chan bool) {
+	ticker := time.NewTicker(5 * time.Second)
 	for done := false; !done; {
 		select {
 		case <-ticker.C:
