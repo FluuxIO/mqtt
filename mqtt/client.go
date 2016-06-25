@@ -34,7 +34,7 @@ type OptConnect struct {
 	CleanSession bool
 }
 
-// OptTCP defines TCP/IP related parameters.
+// OptTCP defines TCP/IP related parameters. They are used to configure TCP client connection.
 type OptTCP struct {
 	ConnectTimeout time.Duration
 }
