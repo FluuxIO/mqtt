@@ -1,7 +1,10 @@
 // Direct conversion from my Elixir implementation
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/binary"
+)
 
 const (
 	fixedHeaderFlags = 0
@@ -15,7 +18,7 @@ type Connect struct {
 	protocolName  string
 	protocolLevel int
 	keepalive     int
-	clientID      string
+	ClientID      string
 	cleanSession  bool
 	// TODO: Will should be a sub-struct
 	willFlag    bool
@@ -32,7 +35,7 @@ func (c *Connect) SetKeepalive(keepalive int) {
 }
 
 func (c *Connect) SetClientID(clientID string) {
-	c.clientID = clientID
+	c.ClientID = clientID
 }
 
 func (c *Connect) SetCleanSession(flag bool) {
@@ -58,7 +61,7 @@ func (c *Connect) Marshall() bytes.Buffer {
 	variablePart.WriteByte(encodeProtocolLevel(c.protocolLevel))
 	variablePart.WriteByte(byte(connectFlags))
 	variablePart.Write(encodeUint16(keepalive))
-	variablePart.Write(encodeClientID(c.clientID))
+	variablePart.Write(encodeClientID(c.ClientID))
 
 	if c.willFlag && len(c.willTopic) > 0 {
 		variablePart.Write(encodeString(c.willTopic))
@@ -137,29 +140,31 @@ func decodeConnect(payload []byte) *Connect {
 	var rest []byte
 	connect.protocolName, rest = extractNextString(payload)
 	connect.protocolLevel = int(rest[0])
-	return connect
-}
 
-/*
-// Example:
-func decodeConnect(payload []byte) *Connect {
-	connect := NewConnect()
-	connect.Dup = int2bool(fixedHeaderFlags >> 3)
-	connect.Qos = int((fixedHeaderFlags & 6) >> 1)
-	connect.Retain = int2bool((fixedHeaderFlags & 1))
-	var rest []byte
-	connect.Topic, rest = extractNextString(payload)
-	var index int
-	if len(rest) > 0 {
-		if connect.Qos == 1 || connect.Qos == 2 {
-			offset := 2
-			connect.ID = int(binary.BigEndian.Uint16(rest[:offset]))
-			index = offset
-		}
-		if len(rest) > index {
-			connect.Payload = rest[index:]
-		}
+	flag := rest[1]
+	connect.cleanSession = int2bool(int((flag & 2) >> 1))
+	if connect.willFlag = int2bool(int((flag & 4) >> 2)); connect.willFlag {
+		connect.willQOS = int((flag & 24) >> 3)
+		connect.willRetain = int2bool(int((flag & 32) >> 5))
 	}
+	usernameFlag := int2bool(int((flag & 64) >> 6))
+	passwordFlag := int2bool(int((flag & 128) >> 7))
+
+	connect.keepalive = int(binary.BigEndian.Uint16(rest[2:4]))
+	payload = rest[4:]
+	connect.ClientID, payload = extractNextString(payload)
+
+	if connect.willFlag {
+		connect.willTopic, payload = extractNextString(payload)
+		connect.willMessage, payload = extractNextString(payload)
+	}
+
+	if usernameFlag {
+		connect.username, payload = extractNextString(payload)
+	}
+	if passwordFlag {
+		connect.password, payload = extractNextString(payload)
+	}
+
 	return connect
 }
-*/

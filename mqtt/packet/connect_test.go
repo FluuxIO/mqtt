@@ -31,6 +31,16 @@ func TestIncrementalConnectFlag(t *testing.T) {
 
 func TestConnectDecode(t *testing.T) {
 	connect := NewConnect()
+	connect.cleanSession = true
+	connect.willFlag = true
+	connect.willQOS = 1
+	connect.willRetain = true
+	connect.keepalive = 42
+	connect.ClientID = "TestClientID"
+	connect.willTopic = "test/will"
+	connect.willMessage = "test message"
+	connect.username = "testuser"
+	connect.password = "testpass"
 
 	buf := connect.Marshall()
 	if packet, err := Read(&buf); err != nil {

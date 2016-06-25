@@ -19,7 +19,7 @@ const (
 func TestClient_ConnectTimeout(t *testing.T) {
 	// Setup Mock server
 	done := make(chan struct{})
-	go mqttServerMock(t, done, func(c net.Conn) { return })
+	go mqttServerMock(t, done, func(t *testing.T, c net.Conn) { return })
 	defer close(done)
 
 	// Test / Check result
@@ -46,6 +46,20 @@ func TestClient_Connect(t *testing.T) {
 	}
 }
 
+func TestClient_Unauthorized(t *testing.T) {
+	// Setup Mock server
+	done := make(chan struct{})
+	go mqttServerMock(t, done, handlerUnauthorized)
+	defer close(done)
+
+	// Test / Check result
+	client := New(testMQTTAddress, nil)
+	client.ClientID = "testClientID"
+	if err := client.Connect(); err == nil {
+		t.Error("MQTT connection should have failed")
+	}
+}
+
 func TestClient_KeepAliveDisable(t *testing.T) {
 	// Setup Mock server
 	done := make(chan struct{})
@@ -65,7 +79,7 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 //=============================================================================
 // Mock MQTT server for testing client
 
-type testHandler func(conn net.Conn)
+type testHandler func(t *testing.T, conn net.Conn)
 
 func mqttServerMock(t *testing.T, done <-chan struct{}, handler testHandler) {
 	l, err := net.Listen("tcp", testMQTTAddress)
@@ -90,7 +104,7 @@ func mqttServerMock(t *testing.T, done <-chan struct{}, handler testHandler) {
 			l.Close()
 			return
 		}
-		go handler(conn)
+		go handler(t, conn) // TODO Create a pass a stop channel to stop them
 	}
 }
 
@@ -103,9 +117,31 @@ func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept 
 }
 
 //=============================================================================
+// Basic MQTT Server Mock Handlers.
 
-func handlerConnackSuccess(c net.Conn) {
+// handlerConnackSuccess sends connack to client without even reading from socket.
+func handlerConnackSuccess(t *testing.T, c net.Conn) {
 	ack := packet.ConnAck{}
 	buf := ack.Marshall()
 	buf.WriteTo(c)
+}
+
+func handlerUnauthorized(t *testing.T, c net.Conn) {
+	var p packet.Marshaller
+	var err error
+
+	c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	if p, err = packet.Read(c); err != nil {
+		t.Error("did not receive anything from client")
+	}
+	switch pType := p.(type) {
+	case *packet.Connect:
+		if pType.ClientID != "testClientID" {
+			t.Error("connect packet is not properly parsed")
+		}
+		ack := packet.ConnAck{ReturnCode: packet.ConnRefusedBadUsernameOrPassword}
+		buf := ack.Marshall()
+		buf.WriteTo(c)
+	default:
+	}
 }
