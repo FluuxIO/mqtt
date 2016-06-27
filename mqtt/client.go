@@ -96,7 +96,7 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 				CleanSession: true,
 			},
 			OptTCP: OptTCP{
-				ConnectTimeout: 30000 * time.Millisecond,
+				ConnectTimeout: 30 * time.Second,
 			},
 		},
 	}
