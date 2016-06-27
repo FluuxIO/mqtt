@@ -134,6 +134,7 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 	if p, err = packet.Read(c); err != nil {
 		t.Error("did not receive anything from client")
 	}
+	conn.SetReadDeadline(time.Time{})
 	switch pType := p.(type) {
 	case *packet.Connect:
 		if pType.ClientID != "testClientID" {
