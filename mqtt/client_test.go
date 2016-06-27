@@ -41,7 +41,6 @@ func TestClient_Connect(t *testing.T) {
 
 	// Test / Check result
 	client := New(testMQTTAddress, nil)
-	client.ConnectTimeout = 15 * time.Second
 	if err := client.Connect(); err != nil {
 		t.Error("MQTT connection failed")
 	}
