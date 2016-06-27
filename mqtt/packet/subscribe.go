@@ -5,14 +5,14 @@ import (
 	"encoding/binary"
 )
 
-type Subscribe struct {
-	id     int
-	topics []Topic
-}
-
 type Topic struct {
 	Name string
 	QOS  int
+}
+
+type Subscribe struct {
+	id     int
+	topics []Topic
 }
 
 func (s *Subscribe) AddTopic(topic Topic) {
