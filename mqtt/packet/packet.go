@@ -5,10 +5,6 @@ import (
 	"errors"
 )
 
-var (
-	ErrMalformedLength = errors.New("malformed mqtt packet remaining length")
-)
-
 const (
 	reserved1Type = iota
 	connectType
@@ -28,68 +24,65 @@ const (
 	reserved2Type
 )
 
+const (
+	ConnAccepted                     = 0x00
+	ConnRefusedBadProtocolVersion    = 0x01
+	ConnRefusedIDRejected            = 0x02
+	ConnRefusedServerUnavailable     = 0x03
+	ConnRefusedBadUsernameOrPassword = 0x04
+	ConnRefusedNotAuthorized         = 0x05
+)
+
+const (
+	fixedHeaderFlags = 0
+	protocolName     = "MQTT"
+	protocolLevel    = 4 // This is MQTT v3.1.1
+	defaultClientID  = "GoMQTT"
+)
+
+// =============================================================================
+
+var (
+	ErrMalformedLength                  = errors.New("malformed mqtt packet remaining length")
+	ErrConnRefusedBadProtocolVersion    = errors.New("connection refused, unacceptable protocol version")
+	ErrConnRefusedIDRejected            = errors.New("connection refused, identifier rejected")
+	ErrConnRefusedServerUnavailable     = errors.New("connection refused, server unavailable")
+	ErrConnRefusedBadUsernameOrPassword = errors.New("connection refused, bad user name or password")
+	ErrConnRefusedNotAuthorized         = errors.New("connection refused, not authorized")
+	ErrConnUnknown                      = errors.New("connection refused, unknown error")
+)
+
 // Marshaller interface is shared by all MQTT control packets
 type Marshaller interface {
 	Marshall() bytes.Buffer
 }
 
-// NewConnect creates a CONNECT packet with default values
-func NewConnect() *Connect {
-	connect := new(Connect)
-	connect.keepalive = 30
-	connect.protocolName = protocolName
-	connect.protocolLevel = protocolLevel
-	return connect
+// =============================================================================
+
+// ConnAckError ...
+func ConnAckError(returnCode int) error {
+	switch returnCode {
+	case ConnRefusedBadProtocolVersion:
+		return ErrConnRefusedBadProtocolVersion
+	case ConnRefusedIDRejected:
+		return ErrConnRefusedIDRejected
+	case ConnRefusedServerUnavailable:
+		return ErrConnRefusedServerUnavailable
+	case ConnRefusedBadUsernameOrPassword:
+		return ErrConnRefusedBadUsernameOrPassword
+	case ConnRefusedNotAuthorized:
+		return ErrConnRefusedNotAuthorized
+	}
+	return ErrConnUnknown
 }
 
-// NewPublish creates an empty PUBLISH packet with default value.
-// You need at least to set a topic to make a valid packet.
-func NewPublish() *Publish {
-	return new(Publish)
-}
-
-// NewPubAck creates a valid PUBACK packet with id
-func NewPubAck(id int) *PubAck {
-	puback := new(PubAck)
-	puback.id = id
-	return puback
-}
-
-// NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
-// least one topic to create a valid subscribe packet.
-func NewSubscribe() *Subscribe {
-	return new(Subscribe)
-}
-
-// NewUnsubscribe creates an empty UNSUBSCRIBE packet. You need to add at
-// least one topic to create a valid unsubscribe packet.
-func NewUnsubscribe() *Unsubscribe {
-	return new(Unsubscribe)
-}
-
-// NewPingReq creates a PINGREQ packet
-func NewPingReq() *PingReq {
-	return new(PingReq)
-}
-
-// NewPingResp creates a PINGRESP packet
-func NewPingResp() *PingResp {
-	return new(PingResp)
-}
-
-// NewDisconnect creates a DISCONNECT packet
-func NewDisconnect() *Disconnect {
-	return new(Disconnect)
-}
-
-// TODO Should probably go in a decode.go file
 // Decode returns parsed struct from byte array
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	switch packetType {
 	case connectType:
-		return decodeConnect(payload)
+		return pduConnect.decode(payload)
 	case connackType:
-		return decodeConnAck(payload)
+		return pduConnAck.decode(payload)
 	case publishType:
 		return decodePublish(fixedHeaderFlags, payload)
 	case pubackType:

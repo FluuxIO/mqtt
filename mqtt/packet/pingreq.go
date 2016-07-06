@@ -5,6 +5,10 @@ import "bytes"
 type PingReq struct {
 }
 
+func NewPingReq() PingReq {
+	return PingReq{}
+}
+
 func (c *PingReq) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 	fixedHeaderFlags := 0
@@ -16,7 +20,7 @@ func (c *PingReq) Marshall() bytes.Buffer {
 	return packet
 }
 
-func decodePingReq(payload []byte) *PingReq {
-	ping := new(PingReq)
+func decodePingReq(payload []byte) PingReq {
+	var ping PingReq
 	return ping
 }

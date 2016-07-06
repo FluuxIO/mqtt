@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 )
 
+// PubAck ...
 type PubAck struct {
 	id int
 }
 
-func (s *PubAck) Marshall() bytes.Buffer {
+// Marshall ....
+func (s PubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
@@ -24,8 +26,14 @@ func (s *PubAck) Marshall() bytes.Buffer {
 	return packet
 }
 
-func decodePubAck(payload []byte) *PubAck {
-	puback := new(PubAck)
-	puback.id = int(binary.BigEndian.Uint16(payload[:2]))
-	return puback
+//==============================================================================
+
+type puback struct{}
+
+var pubAck puback
+
+func (puback) decode(payload []byte) PubAck {
+	return PubAck{
+		id: int(binary.BigEndian.Uint16(payload[:2])),
+	}
 }

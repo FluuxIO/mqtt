@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 )
 
-type Publish struct {
+type PDUPublish struct {
 	ID      int
 	Dup     bool
 	Qos     int
@@ -14,15 +14,7 @@ type Publish struct {
 	Payload []byte
 }
 
-func (p *Publish) SetTopic(topic string) {
-	p.Topic = topic
-}
-
-func (p *Publish) SetPayload(payload []byte) {
-	p.Payload = payload
-}
-
-func (p *Publish) Marshall() bytes.Buffer {
+func (p PDUPublish) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
@@ -40,8 +32,13 @@ func (p *Publish) Marshall() bytes.Buffer {
 	return packet
 }
 
-func decodePublish(fixedHeaderFlags int, payload []byte) *Publish {
-	publish := NewPublish()
+type pdupublish struct{}
+
+var pduPublish pdupublish
+
+func (pdupublish) decode(fixedHeaderFlags int, payload []byte) PDUPublish {
+	var publish Publish
+
 	publish.Dup = int2bool(fixedHeaderFlags >> 3)
 	publish.Qos = int((fixedHeaderFlags & 6) >> 1)
 	publish.Retain = int2bool((fixedHeaderFlags & 1))

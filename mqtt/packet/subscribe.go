@@ -15,6 +15,12 @@ type Subscribe struct {
 	topics []Topic
 }
 
+// NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
+// least one topic to create a valid subscribe packet.
+func NewSubscribe() *Subscribe {
+	return &Subscribe{}
+}
+
 func (s *Subscribe) AddTopic(topic Topic) {
 	s.topics = append(s.topics, topic)
 }
