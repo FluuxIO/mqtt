@@ -4,11 +4,15 @@
 
 This is an MQTT v3.1.1 client library written in Go.
 
-The library is inspired by my Go XMPP library (gox) and tries to use similar consistant API.
+The library is inspired by my Go XMPP library (gox) and tries to use similar consistent API.
 
 The library has been tested with the following MQTT servers:
 
 - Mosquitto
+
+## Short term tasks
+
+Implement support for QOS 1 and 2 (with storage backend interface and default backends).
 
 ## Running tests
 
