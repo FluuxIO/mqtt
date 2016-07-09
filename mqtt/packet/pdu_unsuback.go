@@ -26,11 +26,11 @@ func (u PDUUnsubAck) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_UnsubAck struct{}
+type pduUnsubAckDecoder struct{}
 
-var pduUnsubAck pdu_UnsubAck
+var pduUnsubAck pduUnsubAckDecoder
 
-func (pdu_UnsubAck) decode(payload []byte) PDUUnsubAck {
+func (pduUnsubAckDecoder) decode(payload []byte) PDUUnsubAck {
 	unsuback := PDUUnsubAck{}
 	if len(payload) >= 2 {
 		unsuback.ID = int(binary.BigEndian.Uint16(payload[:2]))

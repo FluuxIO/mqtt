@@ -43,11 +43,11 @@ func (s PDUSubscribe) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_Subscribe struct{}
+type pduSubscribeDecoder struct{}
 
-var pduSubscribe pdu_Subscribe
+var pduSubscribe pduSubscribeDecoder
 
-func (pdu_Subscribe) decode(payload []byte) PDUSubscribe {
+func (pduSubscribeDecoder) decode(payload []byte) PDUSubscribe {
 	subscribe := PDUSubscribe{}
 	subscribe.ID = int(binary.BigEndian.Uint16(payload[:2]))
 

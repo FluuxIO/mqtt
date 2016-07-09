@@ -28,11 +28,11 @@ func (s PDUPubAck) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_PubAck struct{}
+type pduPubAckDecoder struct{}
 
-var pduPubAck pdu_PubAck
+var pduPubAck pduPubAckDecoder
 
-func (pdu_PubAck) decode(payload []byte) PDUPubAck {
+func (pduPubAckDecoder) decode(payload []byte) PDUPubAck {
 	return PDUPubAck{
 		ID: int(binary.BigEndian.Uint16(payload[:2])),
 	}

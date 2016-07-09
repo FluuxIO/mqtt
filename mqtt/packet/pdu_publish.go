@@ -34,11 +34,11 @@ func (p PDUPublish) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdupublish struct{}
+type pduPublishDecoder struct{}
 
-var pduPublish pdupublish
+var pduPublish pduPublishDecoder
 
-func (pdupublish) decode(fixedHeaderFlags int, payload []byte) PDUPublish {
+func (pduPublishDecoder) decode(fixedHeaderFlags int, payload []byte) PDUPublish {
 	var publish PDUPublish
 
 	publish.Dup = int2bool(fixedHeaderFlags >> 3)

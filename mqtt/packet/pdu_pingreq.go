@@ -18,11 +18,11 @@ func (c PDUPingReq) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_PingReq struct{}
+type pduPingReqDecoder struct{}
 
-var pduPingReq pdu_PingReq
+var pduPingReq pduPingReqDecoder
 
-func (pdu_PingReq) decode(payload []byte) PDUPingReq {
+func (pduPingReqDecoder) decode(payload []byte) PDUPingReq {
 	var ping PDUPingReq
 	return ping
 }

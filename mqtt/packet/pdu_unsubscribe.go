@@ -36,11 +36,11 @@ func (u PDUUnsubscribe) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_Unsubscribe struct{}
+type pduUnsubscribeDecoder struct{}
 
-var pduUnsubscribe pdu_Unsubscribe
+var pduUnsubscribe pduUnsubscribeDecoder
 
-func (pdu_Unsubscribe) decode(payload []byte) PDUUnsubscribe {
+func (pduUnsubscribeDecoder) decode(payload []byte) PDUUnsubscribe {
 	unsubscribe := PDUUnsubscribe{}
 	unsubscribe.ID = int(binary.BigEndian.Uint16(payload[:2]))
 

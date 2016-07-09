@@ -31,16 +31,16 @@ func (s PDUSubAck) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type pdu_SubAck struct{}
+type pduSubAckDecoder struct{}
 
-var pduSubAck pdu_SubAck
+var pduSubAck pduSubAckDecoder
 
 // TODO How to return all code backs to client using the library ?
 // We likely want to keep in memory current subscription with their state
 // Client could read the current subscription state map to read the status of each subscription.
 // We should probably return error if a subscription is rejected or if
 // one of the QOS is lower than the level we asked for.
-func (pdu_SubAck) decode(payload []byte) PDUSubAck {
+func (pduSubAckDecoder) decode(payload []byte) PDUSubAck {
 	var suback PDUSubAck
 
 	if len(payload) >= 2 {
