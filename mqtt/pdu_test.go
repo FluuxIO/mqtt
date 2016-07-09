@@ -1,4 +1,4 @@
-package packet
+package mqtt
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func TestConnectDecode(t *testing.T) {
 	connect.Password = "testpass"
 
 	buf := connect.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
 		switch p := packet.(type) {
@@ -79,7 +79,7 @@ func TestConnAckEncodeDecode(t *testing.T) {
 	ca := &PDUConnAck{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
@@ -105,7 +105,7 @@ func TestPublishDecode(t *testing.T) {
 	publish.Payload = []byte("Hi")
 
 	buf := publish.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode publish packet: %q", err)
 	} else {
 		switch p := packet.(type) {
@@ -149,7 +149,7 @@ func TestSubscribeDecode(t *testing.T) {
 	subscribe.Topics = append(subscribe.Topics, t2)
 
 	buf := subscribe.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode subscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {

@@ -6,8 +6,6 @@ import (
 	"net"
 	"sync"
 	"time"
-
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 var (
@@ -84,7 +82,7 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 			// As default we do not want to use a persistent session:
 			OptConnect: OptConnect{
-				ProtocolLevel: packet.ProtocolLevel,
+				ProtocolLevel: ProtocolLevel,
 				Keepalive:     30,
 				CleanSession:  true,
 			},
@@ -106,7 +104,7 @@ func (c *Client) Connect() error {
 // Disconnect sends DISCONNECT MQTT packet to other party and clean up the client
 // state.
 func (c *Client) Disconnect() {
-	packet := packet.PDUDisconnect{}
+	packet := PDUDisconnect{}
 	c.send(&packet)
 	// TODO Properly terminates receiver and sender and close message channel
 }
@@ -115,16 +113,15 @@ func (c *Client) Disconnect() {
 
 // Subscribe sends SUBSCRIBE MQTT control packet.
 // At the moment suscribe are not kept in client state and are lost on reconnection.
-// FIXME(mr) packet.Topic does not seem a good name
-func (c *Client) Subscribe(topic packet.Topic) {
-	subscribe := packet.PDUSubscribe{}
+func (c *Client) Subscribe(topic Topic) {
+	subscribe := PDUSubscribe{}
 	subscribe.Topics = append(subscribe.Topics, topic)
 	c.send(&subscribe)
 }
 
 // Unsubscribe sends UNSUBSCRIBE MQTT control packet.
 func (c *Client) Unsubscribe(topic string) {
-	unsubscribe := packet.PDUUnsubscribe{}
+	unsubscribe := PDUUnsubscribe{}
 	unsubscribe.Topics = append(unsubscribe.Topics, topic)
 	c.send(&unsubscribe)
 }
@@ -133,7 +130,7 @@ func (c *Client) Unsubscribe(topic string) {
 
 // Publish sends PUBLISH MQTT control packet.
 func (c *Client) Publish(topic string, payload []byte) {
-	publish := packet.PDUPublish{}
+	publish := PDUPublish{}
 	publish.Topic = topic
 	publish.Payload = payload
 	c.send(&publish)
@@ -156,7 +153,7 @@ func (c *Client) connect(retry bool) error {
 
 	// 1. Open session - Login
 	// Send connect packet
-	connectPacket := packet.PDUConnect{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
+	connectPacket := PDUConnect{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
 	connectPacket.Keepalive = c.Keepalive
 	connectPacket.ClientID = c.ClientID
 	connectPacket.CleanSession = c.CleanSession
@@ -164,17 +161,17 @@ func (c *Client) connect(retry bool) error {
 	buf.WriteTo(conn)
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
-	var connack packet.Marshaller
-	if connack, err = packet.Read(conn); err != nil {
+	var connack Marshaller
+	if connack, err = PacketRead(conn); err != nil {
 		return err
 	}
 
 	switch p := connack.(type) {
-	case packet.PDUConnAck:
+	case PDUConnAck:
 		switch p.ReturnCode {
-		case packet.ConnAccepted:
+		case ConnAccepted:
 		default:
-			return packet.ConnAckError(p.ReturnCode)
+			return ConnAckError(p.ReturnCode)
 		}
 	default:
 		return ErrIncorrectConnectResponse
@@ -207,7 +204,7 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 
 // ============================================================================
 
-func (c *Client) send(packet packet.Marshaller) {
+func (c *Client) send(packet Marshaller) {
 	buf := packet.Marshall()
 	sender := c.getSender()
 	sender.send(&buf)

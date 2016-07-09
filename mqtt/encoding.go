@@ -1,4 +1,4 @@
-package packet
+package mqtt
 
 import (
 	"bytes"
@@ -145,9 +145,8 @@ func int2bool(i int) bool {
 
 //==============================================================================
 
-// Read returns unmarshalled packet from io.Reader stream
-// TODO: Rename PacketRead when packet package is merge into MQTT package.
-func Read(r io.Reader) (Marshaller, error) {
+// PacketRead returns unmarshalled packet from io.Reader stream
+func PacketRead(r io.Reader) (Marshaller, error) {
 	var err error
 	fixedHeader := make([]byte, 1)
 

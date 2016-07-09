@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 // Receiver actually need:
@@ -22,12 +20,12 @@ func initReceiver(conn net.Conn, messageChannel chan<- *Message, s sender) <-cha
 
 // Receive, decode and dispatch messages to the message channel
 func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message, s sender) {
-	var p packet.Marshaller
+	var p Marshaller
 	var err error
 
 Loop:
 	for {
-		if p, err = packet.Read(conn); err != nil {
+		if p, err = PacketRead(conn); err != nil {
 			if err == io.EOF {
 				fmt.Printf("Connection closed\n")
 			}
@@ -40,7 +38,7 @@ Loop:
 
 		// Only broadcast message back to client when we receive publish packets
 		switch packetType := p.(type) {
-		case packet.PDUPublish:
+		case PDUPublish:
 			m := new(Message)
 			m.Topic = packetType.Topic
 			m.Payload = packetType.Payload
@@ -55,11 +53,11 @@ Loop:
 }
 
 // Send acks if needed, depending on packet QOS
-func sendAckIfNeeded(pkt packet.Marshaller, s sender) {
+func sendAckIfNeeded(pkt Marshaller, s sender) {
 	switch p := pkt.(type) {
-	case packet.PDUPublish:
+	case PDUPublish:
 		if p.Qos == 1 {
-			puback := packet.PDUPubAck{ID: p.ID}
+			puback := PDUPubAck{ID: p.ID}
 			buf := puback.Marshall()
 			s.send(&buf)
 		}
