@@ -10,13 +10,6 @@ import (
 	"github.com/processone/gomqtt/mqtt/packet"
 )
 
-const (
-	stateConnecting = iota
-	stateConnected
-	stateReconnecting
-	stateDisconnected
-)
-
 var (
 	// ErrIncorrectConnectResponse is triggered on CONNECT when server does not reply with CONNACK packet.
 	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
