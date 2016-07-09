@@ -24,6 +24,7 @@ const (
 	reserved2Type
 )
 
+// MQTT error codes returned on CONNECT.
 const (
 	ConnAccepted                     = 0x00
 	ConnRefusedBadProtocolVersion    = 0x01
@@ -33,6 +34,7 @@ const (
 	ConnRefusedNotAuthorized         = 0x05
 )
 
+// Default protocol values
 const (
 	fixedHeaderFlags = 0
 	ProtocolName     = "MQTT"
@@ -42,6 +44,7 @@ const (
 
 // =============================================================================
 
+// Errors MQTT client can return.
 var (
 	ErrMalformedLength                  = errors.New("malformed mqtt packet remaining length")
 	ErrConnRefusedBadProtocolVersion    = errors.New("connection refused, unacceptable protocol version")

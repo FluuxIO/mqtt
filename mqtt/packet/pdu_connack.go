@@ -2,7 +2,7 @@ package packet
 
 import "bytes"
 
-// PDUConnAck is the PDU send as a reply to CONNECT control packet.
+// PDUConnAck is the PDU sent as a reply to CONNECT control packet.
 // It contains the result of the CONNECT operation.
 type PDUConnAck struct {
 	ReturnCode int
@@ -28,11 +28,11 @@ func (pdu PDUConnAck) Marshall() bytes.Buffer {
 
 // ============================================================================
 
-type pdu_ConnAck struct{}
+type connAckDecoder struct{}
 
-var pduConnAck pdu_ConnAck
+var pduConnAck connAckDecoder
 
-func (pdu_ConnAck) decode(payload []byte) PDUConnAck {
+func (connAckDecoder) decode(payload []byte) PDUConnAck {
 	return PDUConnAck{
 		ReturnCode: int(payload[1]),
 	}

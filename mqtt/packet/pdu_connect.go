@@ -1,4 +1,3 @@
-// Direct conversion from my Elixir implementation
 package packet
 
 import (
@@ -6,7 +5,7 @@ import (
 	"encoding/binary"
 )
 
-// PDUConnect is the PDU for ...
+// PDUConnect is the PDU send from client to log into an MQTT server.
 type PDUConnect struct {
 	ProtocolName  string
 	ProtocolLevel int
@@ -26,14 +25,14 @@ type PDUConnect struct {
 
 // SetWill defines all the will values connect control packet at once,
 // for consistency.
-func (c *PDUConnect) SetWill(topic string, message string, qos int) {
-	c.WillFlag = true
-	c.WillQOS = qos
-	c.WillTopic = topic
-	c.WillMessage = message
+func (pdu *PDUConnect) SetWill(topic string, message string, qos int) {
+	pdu.WillFlag = true
+	pdu.WillQOS = qos
+	pdu.WillTopic = topic
+	pdu.WillMessage = message
 }
 
-// Marshall return buffer containing serialized CONNECT MQTT control packet.
+// Marshall serializes a CONNECT struct as an MQTT control packet.
 func (pdu PDUConnect) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
@@ -117,11 +116,11 @@ func encodeProtocolLevel(level int) byte {
 
 //==============================================================================
 
-type pdu_Connect struct{}
+type pduConnectDecoder struct{}
 
-var pduConnect pdu_Connect
+var pduConnect pduConnectDecoder
 
-func (pdu_Connect) decode(payload []byte) PDUConnect {
+func (pduConnectDecoder) decode(payload []byte) PDUConnect {
 	var pdu PDUConnect
 	var rest []byte
 
