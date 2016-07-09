@@ -59,7 +59,7 @@ type Marshaller interface {
 
 // =============================================================================
 
-// ConnAckError ...
+// ConnAckError translates an MQTT ConnAck error into a Go error.
 func ConnAckError(returnCode int) error {
 	switch returnCode {
 	case ConnRefusedBadProtocolVersion:

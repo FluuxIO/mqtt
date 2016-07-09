@@ -1,6 +1,3 @@
-/*
-MQTT package implements MQTT protocol. It can be use as a client library to write MQTT clients in Go.
-*/
 package mqtt
 
 import (
@@ -21,6 +18,7 @@ const (
 )
 
 var (
+	// ErrIncorrectConnectResponse is triggered on CONNECT when server does not reply with CONNACK packet.
 	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
 )
 
@@ -122,6 +120,8 @@ func (c *Client) Disconnect() {
 
 // ============================================================================
 
+// Subscribe sends SUBSCRIBE MQTT control packet.
+// At the moment suscribe are not kept in client state and are lost on reconnection.
 // FIXME(mr) packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
 	subscribe := packet.PDUSubscribe{}
@@ -129,6 +129,7 @@ func (c *Client) Subscribe(topic packet.Topic) {
 	c.send(&subscribe)
 }
 
+// Unsubscribe sends UNSUBSCRIBE MQTT control packet.
 func (c *Client) Unsubscribe(topic string) {
 	unsubscribe := packet.PDUUnsubscribe{}
 	unsubscribe.Topics = append(unsubscribe.Topics, topic)
@@ -137,6 +138,7 @@ func (c *Client) Unsubscribe(topic string) {
 
 // ============================================================================
 
+// Publish sends PUBLISH MQTT control packet.
 func (c *Client) Publish(topic string, payload []byte) {
 	publish := packet.PDUPublish{}
 	publish.Topic = topic
@@ -169,20 +171,22 @@ func (c *Client) connect(retry bool) error {
 	buf.WriteTo(conn)
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
-	if connack, err := packet.PacketRead(conn); err != nil {
+	var connack packet.Marshaller
+	if connack, err = packet.PacketRead(conn); err != nil {
 		return err
-	} else {
-		switch p := connack.(type) {
-		case packet.PDUConnAck:
-			switch p.ReturnCode {
-			case packet.ConnAccepted:
-			default:
-				return packet.ConnAckError(p.ReturnCode)
-			}
-		default:
-			return ErrIncorrectConnectResponse
-		}
 	}
+
+	switch p := connack.(type) {
+	case packet.PDUConnAck:
+		switch p.ReturnCode {
+		case packet.ConnAccepted:
+		default:
+			return packet.ConnAckError(p.ReturnCode)
+		}
+	default:
+		return ErrIncorrectConnectResponse
+	}
+
 	conn.SetReadDeadline(time.Time{})
 
 	// 2. Connected. We set environment up
