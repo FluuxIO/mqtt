@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 )
 
-// PDUConnect is the PDU send from client to log into an MQTT server.
+// PDUConnect is the PDU sent from client to log into an MQTT server.
 type PDUConnect struct {
 	ProtocolName  string
 	ProtocolLevel int
