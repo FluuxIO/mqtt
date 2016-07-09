@@ -2,12 +2,12 @@ package packet
 
 import "bytes"
 
-// PDUDisconnect ...
+// PDUDisconnect is the PDU sent from client to notify disconnection from server.
 type PDUDisconnect struct {
 }
 
-// Marshall ...
-func (d *PDUDisconnect) Marshall() bytes.Buffer {
+// Marshall serializes a DISCONNECT struct as an MQTT control packet.
+func (d PDUDisconnect) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 
 	fixedHeader := (disconnectType<<4 | fixedHeaderFlags)
@@ -18,8 +18,11 @@ func (d *PDUDisconnect) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-// decodeDisconnect ...
-func decodeDisconnect(payload []byte) *PDUDisconnect {
-	disconnect := new(PDUDisconnect)
+type pduDisconnectDecoder struct{}
+
+var pduDisconnect pduDisconnectDecoder
+
+func (pduDisconnectDecoder) decode(payload []byte) PDUDisconnect {
+	var disconnect PDUDisconnect
 	return disconnect
 }

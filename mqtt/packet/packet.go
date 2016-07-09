@@ -105,7 +105,7 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	case pingrespType:
 		return pduPingResp.decode(payload)
 	case disconnectType:
-		return decodeDisconnect(payload)
+		return pduDisconnect.decode(payload)
 	default: // Unsupported MQTT packet type
 		return nil
 	}
