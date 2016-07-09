@@ -59,7 +59,7 @@ func (s sender) send(buf *bytes.Buffer) {
 	s.out <- buf
 }
 
-// Clean-up:
+// clean-up:
 func terminateSender(conn net.Conn, keepaliveCtl chan int) {
 	keepaliveSignal(keepaliveCtl, keepaliveStop)
 	conn.Close()
