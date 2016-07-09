@@ -15,7 +15,7 @@ func TestPublishDecode(t *testing.T) {
 	publish.Payload = []byte("Hi")
 
 	buf := publish.Marshall()
-	if packet, err := PacketRead(&buf); err != nil {
+	if packet, err := Read(&buf); err != nil {
 		t.Errorf("cannot decode publish packet: %q", err)
 	} else {
 		switch p := packet.(type) {

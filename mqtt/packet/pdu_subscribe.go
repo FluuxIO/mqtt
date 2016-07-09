@@ -5,16 +5,19 @@ import (
 	"encoding/binary"
 )
 
+// Topic is a channel used for publish and subscribe in MQTT protocol.
 type Topic struct {
 	Name string
 	QOS  int
 }
 
+// PDUSubscribe is the PDU sent by client to subscribe to one or more topics.
 type PDUSubscribe struct {
 	ID     int
 	Topics []Topic
 }
 
+// Marshall serializes a SUBSCRIBE struct as an MQTT control packet.
 func (s PDUSubscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

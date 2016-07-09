@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 )
 
+// PDUPublish is the PDU sent by client or server to initiate or deliver
+// payload broadcast.
 type PDUPublish struct {
 	ID      int
 	Dup     bool
@@ -14,6 +16,7 @@ type PDUPublish struct {
 	Payload []byte
 }
 
+// Marshall serializes a PUBLISH struct as an MQTT control packet.
 func (p PDUPublish) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

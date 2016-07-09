@@ -5,10 +5,12 @@ import (
 	"encoding/binary"
 )
 
+// PDUUnsubAck is the PDU sent by server to acknowledge client UNSUBSCRIBE.
 type PDUUnsubAck struct {
 	ID int
 }
 
+// Marshall serializes a UNSUBACK struct as an MQTT control packet.
 func (u PDUUnsubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

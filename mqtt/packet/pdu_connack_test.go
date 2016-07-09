@@ -7,7 +7,7 @@ func TestConnAckEncodeDecode(t *testing.T) {
 	ca := &PDUConnAck{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
-	if packet, err := PacketRead(&buf); err != nil {
+	if packet, err := Read(&buf); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {

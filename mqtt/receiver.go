@@ -27,7 +27,7 @@ func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message, 
 
 Loop:
 	for {
-		if p, err = packet.PacketRead(conn); err != nil {
+		if p, err = packet.Read(conn); err != nil {
 			if err == io.EOF {
 				fmt.Printf("Connection closed\n")
 			}

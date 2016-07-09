@@ -12,7 +12,7 @@ func TestSubscribeDecode(t *testing.T) {
 	subscribe.Topics = append(subscribe.Topics, t2)
 
 	buf := subscribe.Marshall()
-	if packet, err := PacketRead(&buf); err != nil {
+	if packet, err := Read(&buf); err != nil {
 		t.Errorf("cannot decode subscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {

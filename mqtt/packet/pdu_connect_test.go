@@ -43,7 +43,7 @@ func TestConnectDecode(t *testing.T) {
 	connect.Password = "testpass"
 
 	buf := connect.Marshall()
-	if packet, err := PacketRead(&buf); err != nil {
+	if packet, err := Read(&buf); err != nil {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
 		switch p := packet.(type) {

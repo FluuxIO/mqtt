@@ -131,7 +131,7 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 	var err error
 
 	c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	if p, err = packet.PacketRead(c); err != nil {
+	if p, err = packet.Read(c); err != nil {
 		t.Error("did not receive anything from client")
 	}
 	c.SetReadDeadline(time.Time{})

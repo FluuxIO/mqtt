@@ -2,9 +2,11 @@ package packet
 
 import "bytes"
 
+// PDUPingResp is the PDU sent by server as response to client PINGREQ.
 type PDUPingResp struct {
 }
 
+// Marshall serializes a PINGRESP struct as an MQTT control packet.
 func (c PDUPingResp) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 	fixedHeaderFlags := 0

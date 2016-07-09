@@ -2,9 +2,12 @@ package packet
 
 import "bytes"
 
+// PDUPingReq is the PDU sent from client for connection keepalive. Client expects to
+// receive a PDUPingResp
 type PDUPingReq struct {
 }
 
+// Marshall serializes a PINGREQ struct as an MQTT control packet.
 func (c PDUPingReq) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 	fixedHeaderFlags := 0

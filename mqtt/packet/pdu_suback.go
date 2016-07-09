@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 )
 
+// PDUSubAck is the PDU sent by server to acknowledge client SUBSCRIBE.
 type PDUSubAck struct {
 	id          int
 	returnCodes []int
 }
 
+// Marshall serializes a SUBACK struct as an MQTT control packet.
 func (s PDUSubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

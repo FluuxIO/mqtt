@@ -6,8 +6,9 @@ import (
 	"io"
 )
 
-// PacketRead returns unmarshalled packet from io.Reader stream
-func PacketRead(r io.Reader) (Marshaller, error) {
+// Read returns unmarshalled packet from io.Reader stream
+// TODO: Rename PacketRead when packet package is merge into MQTT package.
+func Read(r io.Reader) (Marshaller, error) {
 	var err error
 	fixedHeader := make([]byte, 1)
 

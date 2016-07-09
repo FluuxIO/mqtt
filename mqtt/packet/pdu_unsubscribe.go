@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 )
 
+// PDUUnsubscribe is the PDU sent by client to unsubscribe from one or more topics.
 type PDUUnsubscribe struct {
 	ID     int
 	Topics []string
 }
 
+// Marshall serializes a UNSUBSCRIBE struct as an MQTT control packet.
 func (u PDUUnsubscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer

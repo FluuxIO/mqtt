@@ -165,7 +165,7 @@ func (c *Client) connect(retry bool) error {
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
 	var connack packet.Marshaller
-	if connack, err = packet.PacketRead(conn); err != nil {
+	if connack, err = packet.Read(conn); err != nil {
 		return err
 	}
 
