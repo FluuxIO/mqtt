@@ -29,9 +29,10 @@ var (
 // OptConnect defines optional MQTT connection parameters.
 // MQTT client libraries will default to sensible values.
 type OptConnect struct {
-	ClientID     string
-	Keepalive    int // TODO Keepalive should also probably be a time.Duration for more flexibility
-	CleanSession bool
+	ProtocolLevel int
+	ClientID      string
+	Keepalive     int // TODO Keepalive should also probably be a time.Duration for more flexibility
+	CleanSession  bool
 }
 
 // OptTCP defines TCP/IP related parameters. They are used to configure TCP client connection.
@@ -92,8 +93,9 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 			// As default we do not want to use a persistent session:
 			OptConnect: OptConnect{
-				Keepalive:    30,
-				CleanSession: true,
+				ProtocolLevel: packet.ProtocolLevel,
+				Keepalive:     30,
+				CleanSession:  true,
 			},
 			OptTCP: OptTCP{
 				ConnectTimeout: 30 * time.Second,
@@ -113,7 +115,8 @@ func (c *Client) Connect() error {
 // Disconnect sends DISCONNECT MQTT packet to other party and clean up the client
 // state.
 func (c *Client) Disconnect() {
-	c.send(packet.NewDisconnect())
+	packet := packet.PDUDisconnect{}
+	c.send(&packet)
 	// TODO Properly terminates receiver and sender and close message channel
 }
 
@@ -121,24 +124,24 @@ func (c *Client) Disconnect() {
 
 // FIXME(mr) packet.Topic does not seem a good name
 func (c *Client) Subscribe(topic packet.Topic) {
-	subscribe := packet.NewSubscribe()
-	subscribe.AddTopic(topic)
-	c.send(subscribe)
+	subscribe := packet.PDUSubscribe{}
+	subscribe.Topics = append(subscribe.Topics, topic)
+	c.send(&subscribe)
 }
 
 func (c *Client) Unsubscribe(topic string) {
-	unsubscribe := packet.NewUnsubscribe()
-	unsubscribe.AddTopic(topic)
-	c.send(unsubscribe)
+	unsubscribe := packet.PDUUnsubscribe{}
+	unsubscribe.Topics = append(unsubscribe.Topics, topic)
+	c.send(&unsubscribe)
 }
 
 // ============================================================================
 
 func (c *Client) Publish(topic string, payload []byte) {
-	publish := packet.NewPublish()
-	publish.SetTopic(topic)
-	publish.SetPayload(payload)
-	c.send(publish)
+	publish := packet.PDUPublish{}
+	publish.Topic = topic
+	publish.Payload = payload
+	c.send(&publish)
 }
 
 // ============================================================================
@@ -158,19 +161,19 @@ func (c *Client) connect(retry bool) error {
 
 	// 1. Open session - Login
 	// Send connect packet
-	connectPacket := packet.NewConnect()
-	connectPacket.SetKeepalive(c.Keepalive)
-	connectPacket.SetClientID(c.ClientID)
-	connectPacket.SetCleanSession(c.CleanSession)
+	connectPacket := packet.PDUConnect{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
+	connectPacket.Keepalive = c.Keepalive
+	connectPacket.ClientID = c.ClientID
+	connectPacket.CleanSession = c.CleanSession
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
-	if connack, err := packet.Read(conn); err != nil {
+	if connack, err := packet.PacketRead(conn); err != nil {
 		return err
 	} else {
 		switch p := connack.(type) {
-		case *packet.ConnAck:
+		case packet.PDUConnAck:
 			switch p.ReturnCode {
 			case packet.ConnAccepted:
 			default:

@@ -10,33 +10,23 @@ type Topic struct {
 	QOS  int
 }
 
-type Subscribe struct {
-	id     int
-	topics []Topic
+type PDUSubscribe struct {
+	ID     int
+	Topics []Topic
 }
 
-// NewSubscribe creates an empty SUBSCRIBE packet. You need to add at
-// least one topic to create a valid subscribe packet.
-func NewSubscribe() *Subscribe {
-	return &Subscribe{}
-}
-
-func (s *Subscribe) AddTopic(topic Topic) {
-	s.topics = append(s.topics, topic)
-}
-
-func (s *Subscribe) Marshall() bytes.Buffer {
+func (s PDUSubscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
 	// Empty topic list is incorrect. Server must disconnect.
-	if len(s.topics) == 0 {
+	if len(s.Topics) == 0 {
 		return packet
 	}
 
-	variablePart.Write(encodeUint16(uint16(s.id)))
+	variablePart.Write(encodeUint16(uint16(s.ID)))
 
-	for _, topic := range s.topics {
+	for _, topic := range s.Topics {
 		variablePart.Write(encodeString(topic.Name))
 		// TODO Check that QOS is valid
 		variablePart.WriteByte(byte(topic.QOS))
@@ -51,16 +41,22 @@ func (s *Subscribe) Marshall() bytes.Buffer {
 	return packet
 }
 
-func decodeSubscribe(payload []byte) *Subscribe {
-	subscribe := new(Subscribe)
-	subscribe.id = int(binary.BigEndian.Uint16(payload[:2]))
+//==============================================================================
+
+type pdu_Subscribe struct{}
+
+var pduSubscribe pdu_Subscribe
+
+func (pdu_Subscribe) decode(payload []byte) PDUSubscribe {
+	subscribe := PDUSubscribe{}
+	subscribe.ID = int(binary.BigEndian.Uint16(payload[:2]))
 
 	for remaining := payload[2:]; len(remaining) > 0; {
 		topic := Topic{}
 		var rest []byte
 		topic.Name, rest = extractNextString(remaining)
 		topic.QOS = int(rest[0])
-		subscribe.AddTopic(topic)
+		subscribe.Topics = append(subscribe.Topics, topic)
 		remaining = rest[1:]
 	}
 

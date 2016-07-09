@@ -7,7 +7,7 @@ type PDUDisconnect struct {
 }
 
 // Marshall ...
-func (d *Disconnect) Marshall() bytes.Buffer {
+func (d *PDUDisconnect) Marshall() bytes.Buffer {
 	var packet bytes.Buffer
 
 	fixedHeader := (disconnectType<<4 | fixedHeaderFlags)
@@ -19,7 +19,7 @@ func (d *Disconnect) Marshall() bytes.Buffer {
 //==============================================================================
 
 // decodeDisconnect ...
-func decodeDisconnect(payload []byte) *Disconnect {
-	disconnect := new(Disconnect)
+func decodeDisconnect(payload []byte) *PDUDisconnect {
+	disconnect := new(PDUDisconnect)
 	return disconnect
 }

@@ -6,16 +6,16 @@ import (
 )
 
 // PubAck ...
-type PubAck struct {
-	id int
+type PDUPubAck struct {
+	ID int
 }
 
 // Marshall ....
-func (s PubAck) Marshall() bytes.Buffer {
+func (s PDUPubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
-	variablePart.Write(encodeUint16(uint16(s.id)))
+	variablePart.Write(encodeUint16(uint16(s.ID)))
 
 	fixedHeaderFlags := 0
 	fixedHeader := (pubackType<<4 | fixedHeaderFlags)
@@ -28,12 +28,12 @@ func (s PubAck) Marshall() bytes.Buffer {
 
 //==============================================================================
 
-type puback struct{}
+type pdu_PubAck struct{}
 
-var pubAck puback
+var pduPubAck pdu_PubAck
 
-func (puback) decode(payload []byte) PubAck {
-	return PubAck{
-		id: int(binary.BigEndian.Uint16(payload[:2])),
+func (pdu_PubAck) decode(payload []byte) PDUPubAck {
+	return PDUPubAck{
+		ID: int(binary.BigEndian.Uint16(payload[:2])),
 	}
 }

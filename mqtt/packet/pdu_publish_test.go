@@ -6,7 +6,7 @@ import (
 )
 
 func TestPublishDecode(t *testing.T) {
-	publish := NewPublish()
+	publish := PDUPublish{}
 	publish.ID = 1
 	publish.Dup = false
 	publish.Qos = 1
@@ -15,11 +15,11 @@ func TestPublishDecode(t *testing.T) {
 	publish.Payload = []byte("Hi")
 
 	buf := publish.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode publish packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case *Publish:
+		case PDUPublish:
 			if p.Dup != publish.Dup {
 				t.Errorf("incorrect dup flag (%t) = %t", p.Dup, publish.Dup)
 			}

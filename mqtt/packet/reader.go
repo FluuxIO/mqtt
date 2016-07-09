@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-// Read returns unmarshalled packet from io.Reader stream
-func Read(r io.Reader) (Marshaller, error) {
+// PacketRead returns unmarshalled packet from io.Reader stream
+func PacketRead(r io.Reader) (Marshaller, error) {
 	var err error
 	fixedHeader := make([]byte, 1)
 

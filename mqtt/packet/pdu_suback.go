@@ -5,16 +5,12 @@ import (
 	"encoding/binary"
 )
 
-type SubAck struct {
+type PDUSubAck struct {
 	id          int
 	returnCodes []int
 }
 
-func NewSubAck() SubAck {
-	return SubAck{}
-}
-
-func (s *SubAck) Marshall() bytes.Buffer {
+func (s PDUSubAck) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
@@ -33,13 +29,19 @@ func (s *SubAck) Marshall() bytes.Buffer {
 	return packet
 }
 
+//==============================================================================
+
+type pdu_SubAck struct{}
+
+var pduSubAck pdu_SubAck
+
 // TODO How to return all code backs to client using the library ?
 // We likely want to keep in memory current subscription with their state
 // Client could read the current subscription state map to read the status of each subscription.
 // We should probably return error if a subscription is rejected or if
 // one of the QOS is lower than the level we asked for.
-func decodeSubAck(payload []byte) SubAck {
-	var suback SubAck
+func (pdu_SubAck) decode(payload []byte) PDUSubAck {
+	var suback PDUSubAck
 
 	if len(payload) >= 2 {
 		suback.id = int(binary.BigEndian.Uint16(payload[:2]))

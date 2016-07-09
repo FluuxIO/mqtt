@@ -35,9 +35,9 @@ const (
 
 const (
 	fixedHeaderFlags = 0
-	protocolName     = "MQTT"
-	protocolLevel    = 4 // This is MQTT v3.1.1
-	defaultClientID  = "GoMQTT"
+	ProtocolName     = "MQTT"
+	ProtocolLevel    = 4 // This is MQTT v3.1.1
+	DefaultClientID  = "GoMQTT"
 )
 
 // =============================================================================
@@ -76,7 +76,9 @@ func ConnAckError(returnCode int) error {
 	return ErrConnUnknown
 }
 
-// Decode returns parsed struct from byte array
+// Decode returns parsed struct from byte array. It assumes payload does not contain
+// MQTT control packet fixed header, as parsing fixed header is needed to extract
+// the packet type code we have to decode.
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	switch packetType {
 	case connectType:
@@ -84,21 +86,21 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	case connackType:
 		return pduConnAck.decode(payload)
 	case publishType:
-		return decodePublish(fixedHeaderFlags, payload)
+		return pduPublish.decode(fixedHeaderFlags, payload)
 	case pubackType:
-		return decodePubAck(payload)
+		return pduPubAck.decode(payload)
 	case subscribeType:
-		return decodeSubscribe(payload)
+		return pduSubscribe.decode(payload)
 	case subackType:
-		return decodeSubAck(payload)
+		return pduSubAck.decode(payload)
 	case unsubscribeType:
-		return decodeUnsubscribe(payload)
+		return pduUnsubscribe.decode(payload)
 	case unsubackType:
-		return decodeUnsubAck(payload)
+		return pduUnsubAck.decode(payload)
 	case pingreqType:
-		return decodePingReq(payload)
+		return pduPingReq.decode(payload)
 	case pingrespType:
-		return decodePingResp(payload)
+		return pduPingResp.decode(payload)
 	case disconnectType:
 		return decodeDisconnect(payload)
 	default: // Unsupported MQTT packet type

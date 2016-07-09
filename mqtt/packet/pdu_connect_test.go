@@ -4,10 +4,10 @@ import "testing"
 
 // TODO: Test incorrect will QOS
 func TestIncrementalConnectFlag(t *testing.T) {
-	c := Connect{}
+	c := PDUConnect{}
 	assertConnectFlagValue(t, "incorrect connect flag: default connect flag should be empty (%d)", c.connectFlag(), 0)
 
-	c.cleanSession = true
+	c.CleanSession = true
 	assertConnectFlagValue(t, "incorrect connect flag: cleanSession is not true (%d)", c.connectFlag(), 2)
 
 	c.SetWill("topic/a", "Disconnected", 0)
@@ -19,36 +19,36 @@ func TestIncrementalConnectFlag(t *testing.T) {
 	c.SetWill("topic/a", "Disconnected", 2)
 	assertConnectFlagValue(t, "incorrect connect flag: willQOS is not properly set (%d)", c.connectFlag(), 22)
 
-	c.willRetain = true
+	c.WillRetain = true
 	assertConnectFlagValue(t, "incorrect connect flag: willRetain is not properly set (%d)", c.connectFlag(), 54)
 
-	c.username = "User1"
+	c.Username = "User1"
 	assertConnectFlagValue(t, "incorrect connect flag: usernameFlag is not properly set (%d)", c.connectFlag(), 118)
 
-	c.password = "Password"
+	c.Password = "Password"
 	assertConnectFlagValue(t, "incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag(), 246)
 }
 
 func TestConnectDecode(t *testing.T) {
-	connect := NewConnect()
-	connect.cleanSession = true
-	connect.willFlag = true
-	connect.willQOS = 1
-	connect.willRetain = true
-	connect.keepalive = 42
+	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
+	connect.CleanSession = true
+	connect.WillFlag = true
+	connect.WillQOS = 1
+	connect.WillRetain = true
+	connect.Keepalive = 42
 	connect.ClientID = "TestClientID"
-	connect.willTopic = "test/will"
-	connect.willMessage = "test message"
-	connect.username = "testuser"
-	connect.password = "testpass"
+	connect.WillTopic = "test/will"
+	connect.WillMessage = "test message"
+	connect.Username = "testuser"
+	connect.Password = "testpass"
 
 	buf := connect.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case *Connect:
-			if *p != *connect {
+		case PDUConnect:
+			if p != connect {
 				t.Errorf("unmarshalled connect does not match original (%+v) = %+v", p, connect)
 			}
 		}

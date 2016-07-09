@@ -27,7 +27,7 @@ func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message, 
 
 Loop:
 	for {
-		if p, err = packet.Read(conn); err != nil {
+		if p, err = packet.PacketRead(conn); err != nil {
 			if err == io.EOF {
 				fmt.Printf("Connection closed\n")
 			}
@@ -40,7 +40,7 @@ Loop:
 
 		// Only broadcast message back to client when we receive publish packets
 		switch packetType := p.(type) {
-		case *packet.Publish:
+		case packet.PDUPublish:
 			m := new(Message)
 			m.Topic = packetType.Topic
 			m.Payload = packetType.Payload
@@ -57,9 +57,9 @@ Loop:
 // Send acks if needed, depending on packet QOS
 func sendAckIfNeeded(pkt packet.Marshaller, s sender) {
 	switch p := pkt.(type) {
-	case *packet.Publish:
+	case packet.PDUPublish:
 		if p.Qos == 1 {
-			puback := packet.NewPubAck(p.ID)
+			puback := packet.PDUPubAck{ID: p.ID}
 			buf := puback.Marshall()
 			s.send(&buf)
 		}

@@ -121,7 +121,7 @@ func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept 
 
 // handlerConnackSuccess sends connack to client without even reading from socket.
 func handlerConnackSuccess(t *testing.T, c net.Conn) {
-	ack := packet.ConnAck{}
+	ack := packet.PDUConnAck{}
 	buf := ack.Marshall()
 	buf.WriteTo(c)
 }
@@ -131,16 +131,16 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 	var err error
 
 	c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	if p, err = packet.Read(c); err != nil {
+	if p, err = packet.PacketRead(c); err != nil {
 		t.Error("did not receive anything from client")
 	}
 	c.SetReadDeadline(time.Time{})
 	switch pType := p.(type) {
-	case *packet.Connect:
+	case packet.PDUConnect:
 		if pType.ClientID != "testClientID" {
 			t.Error("connect packet is not properly parsed")
 		}
-		ack := packet.ConnAck{ReturnCode: packet.ConnRefusedBadUsernameOrPassword}
+		ack := packet.PDUConnAck{ReturnCode: packet.ConnRefusedBadUsernameOrPassword}
 		buf := ack.Marshall()
 		buf.WriteTo(c)
 	default:

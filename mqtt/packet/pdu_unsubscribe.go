@@ -5,27 +5,23 @@ import (
 	"encoding/binary"
 )
 
-type Unsubscribe struct {
-	id     int
-	topics []string
+type PDUUnsubscribe struct {
+	ID     int
+	Topics []string
 }
 
-func (u *Unsubscribe) AddTopic(topic string) {
-	u.topics = append(u.topics, topic)
-}
-
-func (u *Unsubscribe) Marshall() bytes.Buffer {
+func (u PDUUnsubscribe) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
 	var packet bytes.Buffer
 
 	// Empty topic list is incorrect. Server must disconnect.
-	if len(u.topics) == 0 {
+	if len(u.Topics) == 0 {
 		return packet
 	}
 
-	variablePart.Write(encodeUint16(uint16(u.id)))
+	variablePart.Write(encodeUint16(uint16(u.ID)))
 
-	for _, topic := range u.topics {
+	for _, topic := range u.Topics {
 		variablePart.Write(encodeString(topic))
 	}
 
@@ -38,14 +34,20 @@ func (u *Unsubscribe) Marshall() bytes.Buffer {
 	return packet
 }
 
-func decodeUnsubscribe(payload []byte) *Unsubscribe {
-	unsubscribe := new(Unsubscribe)
-	unsubscribe.id = int(binary.BigEndian.Uint16(payload[:2]))
+//==============================================================================
+
+type pdu_Unsubscribe struct{}
+
+var pduUnsubscribe pdu_Unsubscribe
+
+func (pdu_Unsubscribe) decode(payload []byte) PDUUnsubscribe {
+	unsubscribe := PDUUnsubscribe{}
+	unsubscribe.ID = int(binary.BigEndian.Uint16(payload[:2]))
 
 	for remaining := payload[2:]; len(remaining) > 0; {
 		var topic string
 		topic, remaining = extractNextString(remaining)
-		unsubscribe.AddTopic(topic)
+		unsubscribe.Topics = append(unsubscribe.Topics, topic)
 	}
 
 	return unsubscribe

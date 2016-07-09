@@ -4,14 +4,14 @@ import "testing"
 
 func TestConnAckEncodeDecode(t *testing.T) {
 	returnCode := 1
-	ca := &ConnAck{}
+	ca := &PDUConnAck{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
-	if packet, err := Read(&buf); err != nil {
+	if packet, err := PacketRead(&buf); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
-		case *ConnAck:
+		case PDUConnAck:
 			if p.ReturnCode != returnCode {
 				t.Errorf("incorrect result code (%d) = %d", p.ReturnCode, returnCode)
 			}

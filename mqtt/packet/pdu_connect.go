@@ -24,6 +24,15 @@ type PDUConnect struct {
 	Password    string
 }
 
+// SetWill defines all the will values connect control packet at once,
+// for consistency.
+func (c *PDUConnect) SetWill(topic string, message string, qos int) {
+	c.WillFlag = true
+	c.WillQOS = qos
+	c.WillTopic = topic
+	c.WillMessage = message
+}
+
 // Marshall return buffer containing serialized CONNECT MQTT control packet.
 func (pdu PDUConnect) Marshall() bytes.Buffer {
 	var variablePart bytes.Buffer
@@ -56,7 +65,6 @@ func (pdu PDUConnect) Marshall() bytes.Buffer {
 }
 
 func (pdu PDUConnect) connectFlag() int {
-
 	// Only set willFlag if there is actually a topic set.
 	willFlag := pdu.WillFlag && len(pdu.WillTopic) >= 0
 
@@ -84,12 +92,12 @@ func (pdu PDUConnect) connectFlag() int {
 }
 
 func encodeClientID(clientID string) []byte {
-	id := defaultValue(clientID, defaultClientID)
+	id := defaultValue(clientID, DefaultClientID)
 	return encodeString(id)
 }
 
 func encodeProtocolName(name string) []byte {
-	n := defaultValue(name, protocolName)
+	n := defaultValue(name, ProtocolName)
 	return encodeString(n)
 }
 
@@ -102,7 +110,7 @@ func defaultValue(val string, defaultVal string) string {
 
 func encodeProtocolLevel(level int) byte {
 	if level == 0 {
-		level = protocolLevel
+		level = ProtocolLevel
 	}
 	return byte(level)
 }
