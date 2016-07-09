@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 )
 
@@ -151,20 +150,20 @@ func PacketRead(r io.Reader) (Marshaller, error) {
 	fixedHeader := make([]byte, 1)
 
 	if _, err = io.ReadFull(r, fixedHeader); err != nil {
-		fmt.Printf("Read error %q", err.Error())
+		//fmt.Printf("Read error %q", err.Error())
 		return nil, err
 	}
 
 	packetType := fixedHeader[0] >> 4
 	fixedHeaderFlags := fixedHeader[0] & 15 // keep only last 4 bits
 
-	fmt.Printf("PacketType: %d\n", packetType)
+	// fmt.Printf("PacketType: %d\n", packetType)
 	length, _ := readRemainingLength(r)
-	fmt.Printf("Length: %d\n", length)
+	// fmt.Printf("Length: %d\n", length)
 	payload := make([]byte, length)
 	if _, err = io.ReadFull(r, payload); err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			fmt.Printf("Connection closed unexpectedly\n")
+			//fmt.Printf("Connection closed unexpectedly\n")
 		}
 		return nil, err
 	}

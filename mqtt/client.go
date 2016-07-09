@@ -2,7 +2,6 @@ package mqtt
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -140,7 +139,7 @@ func (c *Client) Publish(topic string, payload []byte) {
 // Internal
 
 func (c *Client) connect(retry bool) error {
-	fmt.Println("Trying to connect")
+	// fmt.Println("Trying to connect")
 	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
 		if !retry {
