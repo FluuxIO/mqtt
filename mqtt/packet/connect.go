@@ -1,4 +1,3 @@
-// Direct conversion from my Elixir implementation
 package packet
 
 import (
