@@ -20,7 +20,6 @@ env:
 script:
   - go vet -x  $(go list ./... | grep -v /vendor/)
   - go test -race --coverprofile=mqtt.coverprofile ./mqtt
-  - go test -race --coverprofile=packet.coverprofile ./mqtt/packet
 
 after_script:
   # gover aggregate several coverprofile into one for sending to coverage reporting tool:
