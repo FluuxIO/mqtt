@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"errors"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -11,6 +12,12 @@ var (
 	// ErrIncorrectConnectResponse is triggered on CONNECT when server
 	// does not reply with CONNACK packet.
 	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
+)
+
+const (
+	// DefaultMQTTServer is a shortcut to define connection to local
+	// server
+	DefaultMQTTServer = "localhost:1883"
 )
 
 //=============================================================================
@@ -61,30 +68,14 @@ type Client struct {
 	Messages chan<- *Message
 
 	mu      sync.RWMutex
-	backoff backoff
+	backoff Backoff
 	sender  sender
 }
 
 // New generates a new MQTT client with default parameters. Address
-// must be set as we cannot find relevant default value for server. We
-// also must have a default channel: If the connection is persistent,
-// it is possible that we receive messages coming from previous
-// connection even if we do not subscribe to anything in that session
-// of the client. Having a default channel makes sure we always have a
-// way to receive all messages.
-//
-// The channel will be closed when the session is closed and no
-// further automatic reconnection will be attempted. You can use that
-// close signal to reconnect the client if you wish to, immediately or
-// after a delay.
-//
-// The channel is expected to be passed by the caller because it
-// allows the caller to pass a channel with a buffer size suiting its
-// own use case and expected throughput.
-func New(address string, defaultMsgChannel chan<- *Message) *Client {
+// must be set as we cannot find relevant default value for server.
+func New(address string) *Client {
 	return &Client{
-		Messages: defaultMsgChannel,
-
 		Config: Config{
 			Address: address,
 
@@ -105,7 +96,23 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 // Connect initiates synchronous connection to MQTT server and
 // performs MQTT connect handshake.
-func (c *Client) Connect() error {
+//
+// We must have a default channel for the client to work: If the
+// connection is persistent, it is possible that we receive messages
+// coming from previous connection even if we do not subscribe to
+// anything in that session of the client. Having a default channel
+// makes sure we always have a way to receive all messages.
+//
+// The channel will be closed when the session is closed and no
+// further automatic reconnection will be attempted. You can use that
+// close signal to reconnect the client if you wish to, immediately or
+// after a delay.
+//
+// The channel is expected to be passed by the caller because it
+// allows the caller to pass a channel with a buffer size suiting its
+// own use case and expected throughput.
+func (c *Client) Connect(defaultMsgChannel chan<- *Message) error {
+	c.Messages = defaultMsgChannel
 	return c.connect(false)
 }
 
@@ -147,17 +154,12 @@ func (c *Client) Publish(topic string, payload []byte) {
 // ============================================================================
 // Internal
 
+// TODO remove retry parameter as it is not used
 func (c *Client) connect(retry bool) error {
-	// fmt.Println("Trying to connect")
+	log.Println("Connecting to server")
 	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
-		if !retry {
-			return err
-		}
-		// Sleep with exponential backoff (and jitter) before triggering
-		// reconnect:
-		time.AfterFunc(c.backoff.Duration(), func() { c.connect(retry) })
-		return nil
+		return err
 	}
 
 	// 1. Open session - Login
@@ -195,19 +197,22 @@ func (c *Client) connect(retry bool) error {
 	// Start routine to receive incoming data
 	tearDown := initReceiver(conn, c.Messages, c.sender)
 	// Routine to watch for disconnect event and trigger reconnect
-	go c.disconnected(tearDown, c.sender.done)
+	go c.disconnected(tearDown, c.sender.done, c.Messages)
 	return nil
 }
 
 // get receiver tearDown signal, clean client state and trigger reconnect
-func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}) {
+func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}, messageChannel chan<- *Message) {
 	select {
 	case <-receiverDone:
 		c.sender.quit <- struct{}{}
 	case <-senderDone:
-		// We do nothing for now: As the sender closes socket, this should be enough to have read Loop
-		// fail and properly shutdown process.
+		// We do nothing for now: As the sender closes socket, this should
+		// be enough to have read Loop fail and properly shutdown process.
 	}
+
+	close(messageChannel)
+	c.Messages = nil
 	go c.connect(true)
 }
 

@@ -34,7 +34,11 @@ const (
 	defaultCap    int = 180000 // 3 minutes
 )
 
-type backoff struct {
+// Backoff can provide increasing duration with the number of attempt
+// performed. The structure is used to support exponential backoff on
+// connection attempts to avoid hammering the server we are connecting
+// to.
+type Backoff struct {
 	noJitter     bool
 	base         int
 	factor       int
@@ -43,13 +47,13 @@ type backoff struct {
 	attempt      int
 }
 
-func (b *backoff) Duration() time.Duration {
+func (b *Backoff) Duration() time.Duration {
 	d := b.DurationForAttempt(b.attempt)
 	b.attempt++
 	return d
 }
 
-func (b *backoff) DurationForAttempt(attempt int) time.Duration {
+func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
 	b.setDefault()
 	expBackoff := math.Min(float64(b.cap), float64(b.base)*math.Pow(float64(b.factor), float64(b.attempt)))
 	d := int(math.Trunc(expBackoff))
@@ -59,11 +63,11 @@ func (b *backoff) DurationForAttempt(attempt int) time.Duration {
 	return time.Duration(d) * time.Millisecond
 }
 
-func (b *backoff) Reset() {
+func (b *Backoff) Reset() {
 	b.attempt = 0
 }
 
-func (b *backoff) setDefault() {
+func (b *Backoff) setDefault() {
 	if b.base == 0 {
 		b.base = defaultBase
 	}

@@ -21,10 +21,10 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	defer close(done)
 
 	// Test / Check result
-	client := New(testMQTTAddress, nil)
+	client := New(testMQTTAddress)
 	client.ConnectTimeout = 100 * time.Millisecond
 
-	if err := client.Connect(); err != nil {
+	if err := client.Connect(nil); err != nil {
 		if neterr, ok := err.(net.Error); ok && !neterr.Timeout() {
 			t.Error("MQTT connection should timeout")
 		}
@@ -38,8 +38,8 @@ func TestClient_Connect(t *testing.T) {
 	defer close(done)
 
 	// Test / Check result
-	client := New(testMQTTAddress, nil)
-	if err := client.Connect(); err != nil {
+	client := New(testMQTTAddress)
+	if err := client.Connect(nil); err != nil {
 		t.Error("MQTT connection failed")
 	}
 }
@@ -51,9 +51,9 @@ func TestClient_Unauthorized(t *testing.T) {
 	defer close(done)
 
 	// Test / Check result
-	client := New(testMQTTAddress, nil)
+	client := New(testMQTTAddress)
 	client.ClientID = "testClientID"
-	if err := client.Connect(); err == nil {
+	if err := client.Connect(nil); err == nil {
 		t.Error("MQTT connection should have failed")
 	}
 }
@@ -65,9 +65,9 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 	defer close(done)
 
 	// Test / Check result
-	client := New(testMQTTAddress, nil)
+	client := New(testMQTTAddress)
 	client.Keepalive = 0
-	if err := client.Connect(); err != nil {
+	if err := client.Connect(nil); err != nil {
 		t.Error("MQTT connection failed")
 	}
 	// TODO Check that client does not send PINGREQ to server when keep alive is 0.

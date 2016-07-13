@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"io"
+	"log"
 	"net"
 )
 
@@ -26,9 +27,9 @@ Loop:
 	for {
 		if p, err = PacketRead(conn); err != nil {
 			if err == io.EOF {
-				// fmt.Printf("Connection closed\n")
+				log.Printf("Connection closed\n")
 			}
-			// fmt.Printf("packet read error: %q\n", err)
+			log.Printf("packet read error: %q\n", err)
 			break Loop
 		}
 		// fmt.Printf("Received: %+v\n", p)

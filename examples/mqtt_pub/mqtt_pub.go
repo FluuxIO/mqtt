@@ -17,11 +17,11 @@ import (
 
 func main() {
 	messages := make(chan *mqtt.Message)
-	client := mqtt.New("localhost:1883", messages)
+	client := mqtt.New("localhost:1883")
 	client.ClientID = "MQTT-Pub"
 	fmt.Printf("Server to connect to: %s\n", client.Address)
 
-	if err := client.Connect(); err != nil {
+	if err := client.Connect(messages); err != nil {
 		fmt.Printf("Connection error: %q\n", err)
 		return
 	}

@@ -14,10 +14,10 @@ import (
 )
 
 func main() {
-	client := mqtt.New("localhost:1883", nil)
+	client := mqtt.New("localhost:1883")
 	client.ClientID = "mremond-osx"
 
-	if err := client.Connect(); err != nil {
+	if err := client.Connect(nil); err != nil {
 		log.Fatal("Connection error: ", err)
 	}
 
