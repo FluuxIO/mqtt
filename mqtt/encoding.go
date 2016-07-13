@@ -116,34 +116,6 @@ func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 
 //==============================================================================
 
-func encodeString(str string) []byte {
-	length := make([]byte, 2)
-	binary.BigEndian.PutUint16(length, uint16(len(str)))
-	return append(length, []byte(str)...)
-}
-
-func encodeUint16(num uint16) []byte {
-	bytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(bytes, num)
-	return bytes
-}
-
-func bool2int(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-func int2bool(i int) bool {
-	if i == 1 {
-		return true
-	}
-	return false
-}
-
-//==============================================================================
-
 // PacketRead returns unmarshalled packet from io.Reader stream
 func PacketRead(r io.Reader) (Marshaller, error) {
 	var err error
@@ -194,4 +166,34 @@ func extractNextString(data []byte) (string, []byte) {
 	offset := 2
 	length := int(binary.BigEndian.Uint16(data[:offset]))
 	return string(data[offset : length+offset]), data[length+offset:]
+}
+
+//==============================================================================
+
+// Functions to encode specific data types in MQTT
+
+func encodeString(str string) []byte {
+	length := make([]byte, 2)
+	binary.BigEndian.PutUint16(length, uint16(len(str)))
+	return append(length, []byte(str)...)
+}
+
+func encodeUint16(num uint16) []byte {
+	bytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(bytes, num)
+	return bytes
+}
+
+func bool2int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func int2bool(i int) bool {
+	if i == 1 {
+		return true
+	}
+	return false
 }
