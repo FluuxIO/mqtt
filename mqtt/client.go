@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// ErrIncorrectConnectResponse is triggered on CONNECT when server does not reply with CONNACK packet.
+	// ErrIncorrectConnectResponse is triggered on CONNECT when server
+	// does not reply with CONNACK packet.
 	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
 )
 
@@ -23,12 +24,14 @@ type OptConnect struct {
 	CleanSession  bool
 }
 
-// OptTCP defines TCP/IP related parameters. They are used to configure TCP client connection.
+// OptTCP defines TCP/IP related parameters. They are used to
+// configure TCP client connection.
 type OptTCP struct {
 	ConnectTimeout time.Duration
 }
 
-// Config provides a data structure of required configuration parameters for MQTT connection
+// Config provides a data structure of required configuration
+// parameters for MQTT connection
 type Config struct {
 	Address string
 
@@ -62,16 +65,22 @@ type Client struct {
 	sender  sender
 }
 
-// New generates a new MQTT client with default parameters. Address must be set as we cannot find relevant default
-// value for server. We also must have a default channel: If the connection is persistent, it is possible
-// that we receive messages coming from previous connection even if we do not subscribe
-// to anything in that session of the client. Having a default channel makes sure we always
-// have a way to receive all messages.
-// The channel will be closed when the session is closed and no further automatic reconnection will
-// be attempted. You can use that close signal to reconnect the client if you wish to, immediately
-// or after a delay.
-// The channel is expected to be passed by the caller because it allows the caller to pass a channel
-// with a buffer size suiting its own use case and expected throughput.
+// New generates a new MQTT client with default parameters. Address
+// must be set as we cannot find relevant default value for server. We
+// also must have a default channel: If the connection is persistent,
+// it is possible that we receive messages coming from previous
+// connection even if we do not subscribe to anything in that session
+// of the client. Having a default channel makes sure we always have a
+// way to receive all messages.
+//
+// The channel will be closed when the session is closed and no
+// further automatic reconnection will be attempted. You can use that
+// close signal to reconnect the client if you wish to, immediately or
+// after a delay.
+//
+// The channel is expected to be passed by the caller because it
+// allows the caller to pass a channel with a buffer size suiting its
+// own use case and expected throughput.
 func New(address string, defaultMsgChannel chan<- *Message) *Client {
 	return &Client{
 		Messages: defaultMsgChannel,
@@ -94,14 +103,14 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 // ============================================================================
 
-// Connect initiates synchronous connection to MQTT server and performs MQTT
-// connect handshake.
+// Connect initiates synchronous connection to MQTT server and
+// performs MQTT connect handshake.
 func (c *Client) Connect() error {
 	return c.connect(false)
 }
 
-// Disconnect sends DISCONNECT MQTT packet to other party and clean up the client
-// state.
+// Disconnect sends DISCONNECT MQTT packet to other party and clean up
+// the client state.
 func (c *Client) Disconnect() {
 	packet := PDUDisconnect{}
 	c.send(&packet)
@@ -110,8 +119,8 @@ func (c *Client) Disconnect() {
 
 // ============================================================================
 
-// Subscribe sends SUBSCRIBE MQTT control packet.
-// At the moment suscribe are not kept in client state and are lost on reconnection.
+// Subscribe sends SUBSCRIBE MQTT control packet.  At the moment
+// suscribe are not kept in client state and are lost on reconnection.
 func (c *Client) Subscribe(topic Topic) {
 	subscribe := PDUSubscribe{}
 	subscribe.Topics = append(subscribe.Topics, topic)
@@ -145,7 +154,8 @@ func (c *Client) connect(retry bool) error {
 		if !retry {
 			return err
 		}
-		// Sleep with exponential backoff (and jitter) before triggering reconnect:
+		// Sleep with exponential backoff (and jitter) before triggering
+		// reconnect:
 		time.AfterFunc(c.backoff.Duration(), func() { c.connect(retry) })
 		return nil
 	}
