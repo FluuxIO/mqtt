@@ -3,8 +3,6 @@ package mqtt
 import (
 	"bytes"
 	"net"
-
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 // Sender need the following interface:
@@ -29,7 +27,7 @@ func initSender(conn net.Conn, keepalive int) sender {
 	var keepaliveCtl chan int
 	if keepalive > 0 {
 		keepaliveCtl = startKeepalive(keepalive, func() {
-			pingReq := packet.NewPingReq()
+			pingReq := PDUPingReq{}
 			buf := pingReq.Marshall()
 			buf.WriteTo(conn)
 		})
@@ -59,7 +57,7 @@ func (s sender) send(buf *bytes.Buffer) {
 	s.out <- buf
 }
 
-// Clean-up:
+// clean-up:
 func terminateSender(conn net.Conn, keepaliveCtl chan int) {
 	keepaliveSignal(keepaliveCtl, keepaliveStop)
 	conn.Close()

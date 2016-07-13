@@ -4,8 +4,6 @@ import (
 	"net"
 	"testing"
 	"time"
-
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 const (
@@ -121,26 +119,26 @@ func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept 
 
 // handlerConnackSuccess sends connack to client without even reading from socket.
 func handlerConnackSuccess(t *testing.T, c net.Conn) {
-	ack := packet.ConnAck{}
+	ack := PDUConnAck{}
 	buf := ack.Marshall()
 	buf.WriteTo(c)
 }
 
 func handlerUnauthorized(t *testing.T, c net.Conn) {
-	var p packet.Marshaller
+	var p Marshaller
 	var err error
 
 	c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	if p, err = packet.Read(c); err != nil {
+	if p, err = PacketRead(c); err != nil {
 		t.Error("did not receive anything from client")
 	}
 	c.SetReadDeadline(time.Time{})
 	switch pType := p.(type) {
-	case *packet.Connect:
+	case PDUConnect:
 		if pType.ClientID != "testClientID" {
 			t.Error("connect packet is not properly parsed")
 		}
-		ack := packet.ConnAck{ReturnCode: packet.ConnRefusedBadUsernameOrPassword}
+		ack := PDUConnAck{ReturnCode: ConnRefusedBadUsernameOrPassword}
 		buf := ack.Marshall()
 		buf.WriteTo(c)
 	default:

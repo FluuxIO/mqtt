@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/processone/gomqtt/mqtt"
-	"github.com/processone/gomqtt/mqtt/packet"
 )
 
 func main() {
@@ -28,7 +27,7 @@ func main() {
 	}
 
 	name := "test/topic"
-	topic := packet.Topic{Name: name, QOS: 1}
+	topic := mqtt.Topic{Name: name, QOS: 1}
 	client.Subscribe(topic)
 
 	time.AfterFunc(15*time.Second, func() {

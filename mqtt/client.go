@@ -1,26 +1,15 @@
-/*
-MQTT package implements MQTT protocol. It can be use as a client library to write MQTT clients in Go.
-*/
 package mqtt
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/processone/gomqtt/mqtt/packet"
-)
-
-const (
-	stateConnecting = iota
-	stateConnected
-	stateReconnecting
-	stateDisconnected
 )
 
 var (
+	// ErrIncorrectConnectResponse is triggered on CONNECT when server
+	// does not reply with CONNACK packet.
 	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
 )
 
@@ -29,17 +18,20 @@ var (
 // OptConnect defines optional MQTT connection parameters.
 // MQTT client libraries will default to sensible values.
 type OptConnect struct {
-	ClientID     string
-	Keepalive    int // TODO Keepalive should also probably be a time.Duration for more flexibility
-	CleanSession bool
+	ProtocolLevel int
+	ClientID      string
+	Keepalive     int // TODO Keepalive should also probably be a time.Duration for more flexibility
+	CleanSession  bool
 }
 
-// OptTCP defines TCP/IP related parameters. They are used to configure TCP client connection.
+// OptTCP defines TCP/IP related parameters. They are used to
+// configure TCP client connection.
 type OptTCP struct {
 	ConnectTimeout time.Duration
 }
 
-// Config provides a data structure of required configuration parameters for MQTT connection
+// Config provides a data structure of required configuration
+// parameters for MQTT connection
 type Config struct {
 	Address string
 
@@ -73,16 +65,22 @@ type Client struct {
 	sender  sender
 }
 
-// New generates a new MQTT client with default parameters. Address must be set as we cannot find relevant default
-// value for server. We also must have a default channel: If the connection is persistent, it is possible
-// that we receive messages coming from previous connection even if we do not subscribe
-// to anything in that session of the client. Having a default channel makes sure we always
-// have a way to receive all messages.
-// The channel will be closed when the session is closed and no further automatic reconnection will
-// be attempted. You can use that close signal to reconnect the client if you wish to, immediately
-// or after a delay.
-// The channel is expected to be passed by the caller because it allows the caller to pass a channel
-// with a buffer size suiting its own use case and expected throughput.
+// New generates a new MQTT client with default parameters. Address
+// must be set as we cannot find relevant default value for server. We
+// also must have a default channel: If the connection is persistent,
+// it is possible that we receive messages coming from previous
+// connection even if we do not subscribe to anything in that session
+// of the client. Having a default channel makes sure we always have a
+// way to receive all messages.
+//
+// The channel will be closed when the session is closed and no
+// further automatic reconnection will be attempted. You can use that
+// close signal to reconnect the client if you wish to, immediately or
+// after a delay.
+//
+// The channel is expected to be passed by the caller because it
+// allows the caller to pass a channel with a buffer size suiting its
+// own use case and expected throughput.
 func New(address string, defaultMsgChannel chan<- *Message) *Client {
 	return &Client{
 		Messages: defaultMsgChannel,
@@ -92,8 +90,9 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 			// As default we do not want to use a persistent session:
 			OptConnect: OptConnect{
-				Keepalive:    30,
-				CleanSession: true,
+				ProtocolLevel: ProtocolLevel,
+				Keepalive:     30,
+				CleanSession:  true,
 			},
 			OptTCP: OptTCP{
 				ConnectTimeout: 30 * time.Second,
@@ -104,82 +103,89 @@ func New(address string, defaultMsgChannel chan<- *Message) *Client {
 
 // ============================================================================
 
-// Connect initiates synchronous connection to MQTT server and performs MQTT
-// connect handshake.
+// Connect initiates synchronous connection to MQTT server and
+// performs MQTT connect handshake.
 func (c *Client) Connect() error {
 	return c.connect(false)
 }
 
-// Disconnect sends DISCONNECT MQTT packet to other party and clean up the client
-// state.
+// Disconnect sends DISCONNECT MQTT packet to other party and clean up
+// the client state.
 func (c *Client) Disconnect() {
-	c.send(packet.NewDisconnect())
+	packet := PDUDisconnect{}
+	c.send(&packet)
 	// TODO Properly terminates receiver and sender and close message channel
 }
 
 // ============================================================================
 
-// FIXME(mr) packet.Topic does not seem a good name
-func (c *Client) Subscribe(topic packet.Topic) {
-	subscribe := packet.NewSubscribe()
-	subscribe.AddTopic(topic)
-	c.send(subscribe)
+// Subscribe sends SUBSCRIBE MQTT control packet.  At the moment
+// suscribe are not kept in client state and are lost on reconnection.
+func (c *Client) Subscribe(topic Topic) {
+	subscribe := PDUSubscribe{}
+	subscribe.Topics = append(subscribe.Topics, topic)
+	c.send(&subscribe)
 }
 
+// Unsubscribe sends UNSUBSCRIBE MQTT control packet.
 func (c *Client) Unsubscribe(topic string) {
-	unsubscribe := packet.NewUnsubscribe()
-	unsubscribe.AddTopic(topic)
-	c.send(unsubscribe)
+	unsubscribe := PDUUnsubscribe{}
+	unsubscribe.Topics = append(unsubscribe.Topics, topic)
+	c.send(&unsubscribe)
 }
 
 // ============================================================================
 
+// Publish sends PUBLISH MQTT control packet.
 func (c *Client) Publish(topic string, payload []byte) {
-	publish := packet.NewPublish()
-	publish.SetTopic(topic)
-	publish.SetPayload(payload)
-	c.send(publish)
+	publish := PDUPublish{}
+	publish.Topic = topic
+	publish.Payload = payload
+	c.send(&publish)
 }
 
 // ============================================================================
 // Internal
 
 func (c *Client) connect(retry bool) error {
-	fmt.Println("Trying to connect")
+	// fmt.Println("Trying to connect")
 	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
 		if !retry {
 			return err
 		}
-		// Sleep with exponential backoff (and jitter) before triggering reconnect:
+		// Sleep with exponential backoff (and jitter) before triggering
+		// reconnect:
 		time.AfterFunc(c.backoff.Duration(), func() { c.connect(retry) })
 		return nil
 	}
 
 	// 1. Open session - Login
 	// Send connect packet
-	connectPacket := packet.NewConnect()
-	connectPacket.SetKeepalive(c.Keepalive)
-	connectPacket.SetClientID(c.ClientID)
-	connectPacket.SetCleanSession(c.CleanSession)
+	connectPacket := PDUConnect{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
+	connectPacket.Keepalive = c.Keepalive
+	connectPacket.ClientID = c.ClientID
+	connectPacket.CleanSession = c.CleanSession
 	buf := connectPacket.Marshall()
 	buf.WriteTo(conn)
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
-	if connack, err := packet.Read(conn); err != nil {
+	var connack Marshaller
+	if connack, err = PacketRead(conn); err != nil {
 		return err
-	} else {
-		switch p := connack.(type) {
-		case *packet.ConnAck:
-			switch p.ReturnCode {
-			case packet.ConnAccepted:
-			default:
-				return packet.ConnAckError(p.ReturnCode)
-			}
-		default:
-			return ErrIncorrectConnectResponse
-		}
 	}
+
+	switch p := connack.(type) {
+	case PDUConnAck:
+		switch p.ReturnCode {
+		case ConnAccepted:
+		default:
+			return ConnAckError(p.ReturnCode)
+		}
+	default:
+		return ErrIncorrectConnectResponse
+	}
+
 	conn.SetReadDeadline(time.Time{})
 
 	// 2. Connected. We set environment up
@@ -207,7 +213,7 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 
 // ============================================================================
 
-func (c *Client) send(packet packet.Marshaller) {
+func (c *Client) send(packet Marshaller) {
 	buf := packet.Marshall()
 	sender := c.getSender()
 	sender.send(&buf)
