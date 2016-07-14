@@ -18,12 +18,11 @@ func main() {
 
 	messages := make(chan *mqtt.Message)
 
-	f := func(e mqtt.Event) {
+	client.Handler = func(e mqtt.Event) {
 		if e.Type == mqtt.EventDisconnected {
 			connect(client, messages)
 		}
 	}
-	client.Handler = f
 	connect(client, messages)
 
 	for m := range messages {
