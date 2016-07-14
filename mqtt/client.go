@@ -58,6 +58,23 @@ type Message struct {
 	Payload []byte
 }
 
+// This is a the list of events happening on the connection that the
+// client can be notified about.
+const (
+	EventDisconnected = iota
+)
+
+// Event is a structure use to convey event changes related to client state. This
+// is for example used to notify the client when the client get disconnected.
+type Event struct {
+	Type        int
+	Description string
+}
+
+// EventHandler is use to pass events about state of the connection to
+// client implementation.
+type EventHandler func(Event)
+
 //=============================================================================
 
 // Client is the main structure use to connect as a client on an MQTT
@@ -65,6 +82,7 @@ type Message struct {
 type Client struct {
 	Config
 
+	Handler  EventHandler
 	Messages chan<- *Message
 
 	mu      sync.RWMutex
@@ -74,6 +92,7 @@ type Client struct {
 
 // New generates a new MQTT client with default parameters. Address
 // must be set as we cannot find relevant default value for server.
+// TODO: Should messages channel be set on New ?
 func New(address string) *Client {
 	return &Client{
 		Config: Config{
@@ -113,7 +132,7 @@ func New(address string) *Client {
 // own use case and expected throughput.
 func (c *Client) Connect(defaultMsgChannel chan<- *Message) error {
 	c.Messages = defaultMsgChannel
-	return c.connect(false)
+	return c.connect()
 }
 
 // Disconnect sends DISCONNECT MQTT packet to other party and clean up
@@ -155,7 +174,7 @@ func (c *Client) Publish(topic string, payload []byte) {
 // Internal
 
 // TODO remove retry parameter as it is not used
-func (c *Client) connect(retry bool) error {
+func (c *Client) connect() error {
 	log.Println("Connecting to server")
 	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
@@ -211,9 +230,10 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 		// be enough to have read Loop fail and properly shutdown process.
 	}
 
-	close(messageChannel)
-	c.Messages = nil
-	go c.connect(true)
+	if c.Handler != nil {
+		c.Handler(Event{Type: EventDisconnected})
+	}
+	//go c.connect()
 }
 
 // ============================================================================

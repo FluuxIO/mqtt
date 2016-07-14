@@ -16,27 +16,35 @@ func main() {
 	client.ClientID = "MQTT-Sub"
 	log.Printf("Server to connect to: %s\n", client.Address)
 
+	messages := make(chan *mqtt.Message)
+
+	f := func(e mqtt.Event) {
+		if e.Type == mqtt.EventDisconnected {
+			connect(client, messages)
+		}
+	}
+	client.Handler = f
+	connect(client, messages)
+
+	for m := range messages {
+		log.Printf("Received message from MQTT server on topic %s: %+v\n", m.Topic, m.Payload)
+	}
+}
+
+func connect(client *mqtt.Client, msgs chan *mqtt.Message) {
 	var backoff mqtt.Backoff
+
 	for {
-		messages := make(chan *mqtt.Message)
-		if err := client.Connect(messages); err != nil {
+		if err := client.Connect(msgs); err != nil {
 			log.Printf("Connection error: %q\n", err)
 			time.Sleep(backoff.Duration())
-			continue
+		} else {
+			break
 		}
-		backoff.Reset()
-
-		name := "test/topic"
-		topic := mqtt.Topic{Name: name, QOS: 1}
-		client.Subscribe(topic)
-
-		time.AfterFunc(15*time.Second, func() {
-			client.Unsubscribe(name)
-		})
-
-		for m := range messages {
-			log.Printf("Received message from MQTT server on topic %s: %+v\n", m.Topic, m.Payload)
-		}
-		log.Printf("message channel closed, we have to reconnect")
 	}
+
+	// TODO Move this is a Connected EventHandler
+	name := "test/topic"
+	topic := mqtt.Topic{Name: name, QOS: 1}
+	client.Subscribe(topic)
 }
