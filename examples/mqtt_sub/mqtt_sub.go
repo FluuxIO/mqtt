@@ -43,7 +43,7 @@ func connect(client *mqtt.Client, msgs chan *mqtt.Message) {
 		}
 	}
 
-	// TODO Move this is a Connected EventHandler
+	// TODO Move this to a Connected EventHandler
 	name := "test/topic"
 	topic := mqtt.Topic{Name: name, QOS: 1}
 	client.Subscribe(topic)
