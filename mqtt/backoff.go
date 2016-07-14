@@ -47,12 +47,14 @@ type Backoff struct {
 	attempt      int
 }
 
+// Duration returns the duration to apply to the current attempt.
 func (b *Backoff) Duration() time.Duration {
 	d := b.DurationForAttempt(b.attempt)
 	b.attempt++
 	return d
 }
 
+// DurationForAttempt returns a duration for an attempt number, in a stateless way.
 func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
 	b.setDefault()
 	expBackoff := math.Min(float64(b.cap), float64(b.base)*math.Pow(float64(b.factor), float64(b.attempt)))
@@ -63,6 +65,8 @@ func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
 	return time.Duration(d) * time.Millisecond
 }
 
+// Resets sets back the number of attempts to 0. This is to be called after a successfull operation has been performed,
+// to reset the exponential backoff interval.
 func (b *Backoff) Reset() {
 	b.attempt = 0
 }
