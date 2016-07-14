@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"bytes"
+	"io"
 	"net"
 )
 
@@ -14,13 +15,13 @@ import (
 
 type sender struct {
 	done <-chan struct{}
-	out  chan<- *bytes.Buffer
+	out  chan<- io.WriterTo
 	quit chan<- struct{}
 }
 
 func initSender(conn net.Conn, keepalive int) sender {
 	tearDown := make(chan struct{})
-	out := make(chan *bytes.Buffer)
+	out := make(chan io.WriterTo)
 	quit := make(chan struct{})
 
 	// Start go routine that manage keepalive timer:
@@ -38,7 +39,7 @@ func initSender(conn net.Conn, keepalive int) sender {
 	return s
 }
 
-func senderLoop(conn net.Conn, keepaliveCtl chan int, out <-chan *bytes.Buffer, quit <-chan struct{}, tearDown chan<- struct{}) {
+func senderLoop(conn net.Conn, keepaliveCtl chan int, out <-chan io.WriterTo, quit <-chan struct{}, tearDown chan<- struct{}) {
 Loop:
 	for {
 		select {
@@ -63,8 +64,8 @@ func terminateSender(conn net.Conn, keepaliveCtl chan int) {
 	conn.Close()
 }
 
-// keepaliveSignal sends keepalive commands on keepalive channel
-// if keepalive is not disabled.
+// keepaliveSignal sends keepalive commands on keepalive channel (if
+// keepalive is not disabled).
 func keepaliveSignal(keepaliveCtl chan<- int, signal int) {
 	if keepaliveCtl == nil {
 		return
