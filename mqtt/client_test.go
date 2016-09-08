@@ -94,24 +94,30 @@ type MQTTServerMock struct {
 func (m *MQTTServerMock) Start(t *testing.T, handler testHandler) {
 	m.t = t
 	m.handler = handler
-	m.init()
+	if err := m.init(); err != nil {
+		t.Errorf("MQTT Mock server error: %v", err)
+		return
+	}
 	go m.loop()
 }
 
 func (m *MQTTServerMock) Stop() {
 	close(m.done)
-	m.listener.Close()
+	if m.listener != nil {
+		m.listener.Close()
+	}
 }
 
-func (m *MQTTServerMock) init() {
+func (m *MQTTServerMock) init() error {
+	m.done = make(chan struct{})
+
 	l, err := net.Listen("tcp", testMQTTAddress)
 	if err != nil {
 		m.t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
-		return
+		return err
 	}
 	m.listener = l
-	m.done = make(chan struct{})
-	return
+	return nil
 }
 
 func (m *MQTTServerMock) loop() {
