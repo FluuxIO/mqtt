@@ -115,8 +115,9 @@ func (m *MQTTServerMock) init() {
 }
 
 func (m *MQTTServerMock) loop() {
+	listener := m.listener
 	for {
-		conn, err := m.listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-m.done:
