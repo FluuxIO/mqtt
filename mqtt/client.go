@@ -233,7 +233,6 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	if c.Handler != nil {
 		c.Handler(Event{Type: EventDisconnected})
 	}
-	//go c.connect()
 }
 
 // ============================================================================
