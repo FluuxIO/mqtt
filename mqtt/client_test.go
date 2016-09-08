@@ -1,18 +1,11 @@
 package mqtt_test
 
 import (
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/processone/gomqtt/mqtt"
-)
-
-const (
-	// Default port is not standard MQTT port to avoid interfering
-	// with local running MQTT server
-	testMQTTAddress = "localhost:10883"
 )
 
 // TestClient_ConnectTimeout checks that connect will properly timeout and not
@@ -27,7 +20,6 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	client.ConnectTimeout = 100 * time.Millisecond
 
 	if err := client.Connect(nil); err != nil {
-		fmt.Println("connect error:", err)
 		if neterr, ok := err.(net.Error); ok && !neterr.Timeout() {
 			t.Error("MQTT connection should timeout")
 		}
@@ -63,6 +55,8 @@ func TestClient_Unauthorized(t *testing.T) {
 	mock.Stop()
 }
 
+// TestClient_KeepAliveDisable checks that we can connect successfully
+// without keepalive.
 func TestClient_KeepAliveDisable(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
@@ -81,6 +75,12 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 
 //=============================================================================
 // Mock MQTT server for testing client
+
+const (
+	// Default port is not standard MQTT port to avoid interfering
+	// with local running MQTT server
+	testMQTTAddress = "localhost:10883"
+)
 
 type testHandler func(t *testing.T, conn net.Conn)
 
