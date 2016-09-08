@@ -19,12 +19,8 @@ const (
 // block forever if server never send CONNACK.
 func TestClient_ConnectTimeout(t *testing.T) {
 	// Setup Mock server
-	done := make(chan struct{})
-	ready := make(chan struct{})
-	go mqttServerMock(t, done, ready, func(t *testing.T, c net.Conn) { return })
-	defer close(done)
-
-	<-ready
+	mock := MQTTServerMock{}
+	mock.Start(t, func(t *testing.T, c net.Conn) { return })
 
 	// Test / Check result
 	client := mqtt.New(testMQTTAddress)
@@ -36,16 +32,13 @@ func TestClient_ConnectTimeout(t *testing.T) {
 			t.Error("MQTT connection should timeout")
 		}
 	}
+	mock.Stop()
 }
 
 func TestClient_Connect(t *testing.T) {
 	// Setup Mock server
-	done := make(chan struct{})
-	ready := make(chan struct{})
-	go mqttServerMock(t, done, ready, handlerConnackSuccess)
-	defer close(done)
-
-	<-ready
+	mock := MQTTServerMock{}
+	mock.Start(t, handlerConnackSuccess)
 
 	// Test / Check result
 	client := mqtt.New(testMQTTAddress)
@@ -53,16 +46,13 @@ func TestClient_Connect(t *testing.T) {
 	if err := client.Connect(nil); err != nil {
 		t.Errorf("MQTT connection failed: %s", err)
 	}
+	mock.Stop()
 }
 
 func TestClient_Unauthorized(t *testing.T) {
 	// Setup Mock server
-	done := make(chan struct{})
-	ready := make(chan struct{})
-	go mqttServerMock(t, done, ready, handlerUnauthorized)
-	defer close(done)
-
-	<-ready
+	mock := MQTTServerMock{}
+	mock.Start(t, handlerUnauthorized)
 
 	// Test / Check result
 	client := mqtt.New(testMQTTAddress)
@@ -70,16 +60,13 @@ func TestClient_Unauthorized(t *testing.T) {
 	if err := client.Connect(nil); err == nil {
 		t.Error("MQTT connection should have failed")
 	}
+	mock.Stop()
 }
 
 func TestClient_KeepAliveDisable(t *testing.T) {
 	// Setup Mock server
-	done := make(chan struct{})
-	ready := make(chan struct{})
-	go mqttServerMock(t, done, ready, handlerConnackSuccess)
-	defer close(done)
-
-	<-ready
+	mock := MQTTServerMock{}
+	mock.Start(t, handlerConnackSuccess)
 
 	// Test / Check result
 	client := mqtt.New(testMQTTAddress)
@@ -89,6 +76,7 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 	}
 	// TODO Check that client does not send PINGREQ to server when keep alive is 0.
 	// keepalive 0 should disable keep alive.
+	mock.Stop()
 }
 
 //=============================================================================
@@ -96,42 +84,50 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 
 type testHandler func(t *testing.T, conn net.Conn)
 
-func mqttServerMock(t *testing.T, done <-chan struct{}, ready chan<- struct{}, handler testHandler) {
-	// MQTT Server Mock Init
-	l, err := net.Listen("tcp", testMQTTAddress)
-	if err != nil {
-		t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
-		return
-	}
-
-	stopAccept := make(chan struct{})
-	go mqttServerMockDone(l, done, stopAccept)
-	close(ready)
-
-	// MQTT Server Loop
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			select {
-			case <-stopAccept:
-				return
-			default:
-			}
-
-			t.Error("mqttServerMock accept error:", err.Error())
-			l.Close()
-			return
-		}
-		go handler(t, conn) // TODO Create and pass a context to cancel the handler if they are still around
-	}
+type MQTTServerMock struct {
+	t        *testing.T
+	handler  testHandler
+	listener net.Listener
+	done     chan struct{}
 }
 
-// Watch shutdown signal
-func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept chan<- struct{}) {
-	select {
-	case <-done:
-		close(stopAccept)
-		listener.Close()
+func (m *MQTTServerMock) Start(t *testing.T, handler testHandler) {
+	m.t = t
+	m.handler = handler
+	m.init()
+	go m.loop()
+}
+
+func (m *MQTTServerMock) Stop() {
+	close(m.done)
+	m.listener.Close()
+}
+
+func (m *MQTTServerMock) init() {
+	l, err := net.Listen("tcp", testMQTTAddress)
+	if err != nil {
+		m.t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
+		return
+	}
+	m.listener = l
+	m.done = make(chan struct{})
+	return
+}
+
+func (m *MQTTServerMock) loop() {
+	for {
+		conn, err := m.listener.Accept()
+		if err != nil {
+			select {
+			case <-m.done:
+				return
+			default:
+				m.t.Error("mqttServerMock accept error:", err.Error())
+			}
+			return
+		}
+		// TODO Create and pass a context to cancel the handler if they are still around = avoid possible leak on complex handlers
+		go m.handler(m.t, conn)
 	}
 }
 
@@ -167,9 +163,3 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 	default:
 	}
 }
-
-// To fix test we need to make sure that we do not have race conditions:
-// - Check start mock / listen in a synchronous way
-// - Check that close is also synchronous to also avoid to block next listen
-//
-// + Setup SemaphoreCI with Coveralls: https://github.com/mattn/goveralls
