@@ -97,6 +97,7 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 type testHandler func(t *testing.T, conn net.Conn)
 
 func mqttServerMock(t *testing.T, done <-chan struct{}, ready chan<- struct{}, handler testHandler) {
+	// MQTT Server Mock Init
 	l, err := net.Listen("tcp", testMQTTAddress)
 	if err != nil {
 		t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
@@ -107,6 +108,7 @@ func mqttServerMock(t *testing.T, done <-chan struct{}, ready chan<- struct{}, h
 	go mqttServerMockDone(l, done, stopAccept)
 	close(ready)
 
+	// MQTT Server Loop
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -120,10 +122,11 @@ func mqttServerMock(t *testing.T, done <-chan struct{}, ready chan<- struct{}, h
 			l.Close()
 			return
 		}
-		go handler(t, conn) // TODO Create and pass a stop channel to stop them
+		go handler(t, conn) // TODO Create and pass a context to cancel the handler if they are still around
 	}
 }
 
+// Watch shutdown signal
 func mqttServerMockDone(listener net.Listener, done <-chan struct{}, stopAccept chan<- struct{}) {
 	select {
 	case <-done:
