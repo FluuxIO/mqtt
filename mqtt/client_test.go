@@ -85,26 +85,34 @@ const (
 type testHandler func(t *testing.T, conn net.Conn)
 
 type MQTTServerMock struct {
-	t        *testing.T
-	handler  testHandler
-	listener net.Listener
-	done     chan struct{}
+	t           *testing.T
+	handler     testHandler
+	listener    net.Listener
+	connections []net.Conn
+	done        chan struct{}
 }
 
 func (m *MQTTServerMock) Start(t *testing.T, handler testHandler) {
 	m.t = t
 	m.handler = handler
 	if err := m.init(); err != nil {
-		t.Errorf("MQTT Mock server error: %v", err)
 		return
 	}
 	go m.loop()
 }
 
 func (m *MQTTServerMock) Stop() {
+	// Shutdown Server routine
 	close(m.done)
+
+	// Close listener
 	if m.listener != nil {
 		m.listener.Close()
+	}
+
+	// Close all existing connections
+	for _, conn := range m.connections {
+		conn.Close()
 	}
 }
 
@@ -133,6 +141,7 @@ func (m *MQTTServerMock) loop() {
 			}
 			return
 		}
+		m.connections = append(m.connections, conn)
 		// TODO Create and pass a context to cancel the handler if they are still around = avoid possible leak on complex handlers
 		go m.handler(m.t, conn)
 	}
