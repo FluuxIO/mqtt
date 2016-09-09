@@ -83,7 +83,7 @@ type Client struct {
 	Config
 
 	Handler  EventHandler
-	Messages chan<- *Message
+	Messages chan<- Message
 
 	mu      sync.RWMutex
 	backoff Backoff
@@ -130,7 +130,7 @@ func New(address string) *Client {
 // The channel is expected to be passed by the caller because it
 // allows the caller to pass a channel with a buffer size suiting its
 // own use case and expected throughput.
-func (c *Client) Connect(defaultMsgChannel chan<- *Message) error {
+func (c *Client) Connect(defaultMsgChannel chan<- Message) error {
 	c.Messages = defaultMsgChannel
 	return c.connect()
 }
@@ -221,7 +221,7 @@ func (c *Client) connect() error {
 }
 
 // get receiver tearDown signal, clean client state and trigger reconnect
-func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}, messageChannel chan<- *Message) {
+func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}, messageChannel chan<- Message) {
 	select {
 	case <-receiverDone:
 		c.sender.quit <- struct{}{}

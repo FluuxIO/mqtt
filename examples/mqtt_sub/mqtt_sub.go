@@ -16,7 +16,7 @@ func main() {
 	client.ClientID = "MQTT-Sub"
 	log.Printf("Server to connect to: %s\n", client.Address)
 
-	messages := make(chan *mqtt.Message)
+	messages := make(chan mqtt.Message)
 
 	client.Handler = func(e mqtt.Event) {
 		if e.Type == mqtt.EventDisconnected {
@@ -30,7 +30,8 @@ func main() {
 	}
 }
 
-func connect(client *mqtt.Client, msgs chan *mqtt.Message) {
+// Connect loop
+func connect(client *mqtt.Client, msgs chan mqtt.Message) {
 	var backoff mqtt.Backoff
 
 	for {

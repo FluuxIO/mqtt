@@ -12,14 +12,14 @@ import (
 // - Error send channel to trigger teardown
 // - MessageSendChannel to dispatch messages to client
 
-func initReceiver(conn net.Conn, messageChannel chan<- *Message, s sender) <-chan struct{} {
+func initReceiver(conn net.Conn, messageChannel chan<- Message, s sender) <-chan struct{} {
 	tearDown := make(chan struct{})
 	go receiver(conn, tearDown, messageChannel, s)
 	return tearDown
 }
 
 // Receive, decode and dispatch messages to the message channel
-func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- *Message, s sender) {
+func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- Message, s sender) {
 	var p Marshaller
 	var err error
 
@@ -39,7 +39,7 @@ Loop:
 		// Only broadcast message back to client when we receive publish packets
 		switch packetType := p.(type) {
 		case PDUPublish:
-			m := new(Message)
+			m := Message{}
 			m.Topic = packetType.Topic
 			m.Payload = packetType.Payload
 			message <- m // TODO Back pressure. We may block on processing message if client does not read fast enough. Make sure we can quit.
