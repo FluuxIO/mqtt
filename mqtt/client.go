@@ -2,7 +2,6 @@ package mqtt
 
 import (
 	"errors"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -85,9 +84,8 @@ type Client struct {
 	Handler  EventHandler
 	Messages chan<- Message
 
-	mu      sync.RWMutex
-	backoff Backoff
-	sender  sender
+	mu     sync.RWMutex
+	sender sender
 }
 
 // New generates a new MQTT client with default parameters. Address
@@ -173,9 +171,7 @@ func (c *Client) Publish(topic string, payload []byte) {
 // ============================================================================
 // Internal
 
-// TODO remove retry parameter as it is not used
 func (c *Client) connect() error {
-	log.Println("Connecting to server")
 	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
 	if err != nil {
 		return err
@@ -209,13 +205,10 @@ func (c *Client) connect() error {
 
 	conn.SetReadDeadline(time.Time{})
 
-	// 2. Connected. We set environment up
-	c.backoff.Reset()
-
 	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
 	tearDown := initReceiver(conn, c.Messages, c.sender)
-	// Routine to watch for disconnect event and trigger reconnect
+	// Routine to watch for disconnect signal and broadcast disconnect event to client callback
 	go c.disconnected(tearDown, c.sender.done, c.Messages)
 	return nil
 }
