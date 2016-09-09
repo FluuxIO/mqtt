@@ -18,33 +18,47 @@ func main() {
 
 	messages := make(chan mqtt.Message)
 
-	client.Handler = func(e mqtt.Event) {
-		if e.Type == mqtt.EventDisconnected {
-			connect(client, messages)
-		}
+	postConnect := func(c *mqtt.Client) {
+		name := "test/topic"
+		topic := mqtt.Topic{Name: name, QOS: 1}
+		c.Subscribe(topic)
 	}
-	connect(client, messages)
+
+	client.Handler = autoReconnectHandler(client, messages, postConnect)
+	connect(client, messages, postConnect)
 
 	for m := range messages {
 		log.Printf("Received message from MQTT server on topic %s: %+v\n", m.Topic, m.Payload)
 	}
 }
 
+// postConnect function, if defined, is executed right after connection
+// success (CONNACK).
+type postConnect func(c *mqtt.Client)
+
 // Connect loop
-func connect(client *mqtt.Client, msgs chan mqtt.Message) {
+func connect(client *mqtt.Client, msgs chan mqtt.Message, pc postConnect) {
 	var backoff mqtt.Backoff
 
 	for {
 		if err := client.Connect(msgs); err != nil {
-			log.Printf("Connection error: %q\n", err)
-			time.Sleep(backoff.Duration())
+			log.Printf("Connection error: %v\n", err)
+			time.Sleep(backoff.Duration()) // Do we want a function backoff.Sleep() ?)
 		} else {
 			break
 		}
 	}
 
-	// TODO Move this to a Connected EventHandler
-	name := "test/topic"
-	topic := mqtt.Topic{Name: name, QOS: 1}
-	client.Subscribe(topic)
+	if pc != nil {
+		pc(client)
+	}
+}
+
+func autoReconnectHandler(client *mqtt.Client, messages chan mqtt.Message, postConnect postConnect) mqtt.EventHandler {
+	handler := func(e mqtt.Event) {
+		if e.State == mqtt.StateDisconnected {
+			connect(client, messages, postConnect)
+		}
+	}
+	return handler
 }

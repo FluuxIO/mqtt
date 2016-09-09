@@ -57,16 +57,21 @@ type Message struct {
 	Payload []byte
 }
 
+//=============================================================================
+
+// ConnState represents the current connection state.
+type ConnState int
+
 // This is a the list of events happening on the connection that the
 // client can be notified about.
 const (
-	EventDisconnected = iota
+	StateDisconnected ConnState = iota
 )
 
 // Event is a structure use to convey event changes related to client state. This
 // is for example used to notify the client when the client get disconnected.
 type Event struct {
-	Type        int
+	State       ConnState
 	Description string
 }
 
@@ -224,7 +229,7 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	}
 
 	if c.Handler != nil {
-		c.Handler(Event{Type: EventDisconnected})
+		c.Handler(Event{State: StateDisconnected})
 	}
 }
 
