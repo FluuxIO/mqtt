@@ -92,58 +92,54 @@ type MQTTServerMock struct {
 	done        chan struct{}
 }
 
-func (m *MQTTServerMock) Start(t *testing.T, handler testHandler) {
-	m.t = t
-	m.handler = handler
-	if err := m.init(); err != nil {
+func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) {
+	mock.t = t
+	mock.handler = handler
+	if err := mock.init(); err != nil {
 		return
 	}
-	go m.loop()
+	go mock.loop()
 }
 
-func (m *MQTTServerMock) Stop() {
-	// Shutdown Server routine
-	close(m.done)
-
-	// Close listener
-	if m.listener != nil {
-		m.listener.Close()
-	}
-
-	// Close all existing connections
-	for _, conn := range m.connections {
-		conn.Close()
+func (mock *MQTTServerMock) Stop() {
+	close(mock.done)
+	if mock.listener != nil {
+		mock.listener.Close()
 	}
 }
 
-func (m *MQTTServerMock) init() error {
-	m.done = make(chan struct{})
+func (mock *MQTTServerMock) init() error {
+	mock.done = make(chan struct{})
 
 	l, err := net.Listen("tcp", testMQTTAddress)
 	if err != nil {
-		m.t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
+		mock.t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
 		return err
 	}
-	m.listener = l
+	mock.listener = l
 	return nil
 }
 
-func (m *MQTTServerMock) loop() {
-	listener := m.listener
+func (mock *MQTTServerMock) loop() {
+	listener := mock.listener
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			select {
-			case <-m.done:
+			case <-mock.done:
+				// Close all existing connections
+				for _, c := range mock.connections {
+					c.Close()
+				}
 				return
 			default:
-				m.t.Error("mqttServerMock accept error:", err.Error())
+				mock.t.Error("mqttServerMock accept error:", err.Error())
 			}
 			return
 		}
-		m.connections = append(m.connections, conn)
+		mock.connections = append(mock.connections, conn)
 		// TODO Create and pass a context to cancel the handler if they are still around = avoid possible leak on complex handlers
-		go m.handler(m.t, conn)
+		go mock.handler(mock.t, conn)
 	}
 }
 
