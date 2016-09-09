@@ -110,6 +110,10 @@ func (mock *MQTTServerMock) Stop() {
 	if mock.listener != nil {
 		mock.listener.Close()
 	}
+	// Close all existing connections
+	for _, c := range mock.connections {
+		c.Close()
+	}
 }
 
 func (mock *MQTTServerMock) init() error {
@@ -131,10 +135,6 @@ func (mock *MQTTServerMock) loop() {
 		if err != nil {
 			select {
 			case <-mock.done:
-				// Close all existing connections
-				for _, c := range mock.connections {
-					c.Close()
-				}
 				return
 			default:
 				mock.t.Error("mqttServerMock accept error:", err.Error())
