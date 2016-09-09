@@ -27,6 +27,8 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	mock.Stop()
 }
 
+// TestClient_Connect checks that we can connect to MQTT server and
+// get no error when we receive CONNACK.
 func TestClient_Connect(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
@@ -41,6 +43,8 @@ func TestClient_Connect(t *testing.T) {
 	mock.Stop()
 }
 
+// TestClient_Unauthorized checks that MQTT connect fails when we
+// received unauthorized response.
 func TestClient_Unauthorized(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
