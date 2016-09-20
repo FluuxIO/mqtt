@@ -1,16 +1,13 @@
 package mqtt
 
-import (
-	"log"
-	"time"
-)
+import "log"
 
 // postConnect function, if defined, is executed right after connection
 // success (CONNACK).
 type postConnect func(c *Client) // TODO Should not take an MQTT client, but an io.Writer
 
-// ClientManager supervises a connection to handle connection events and
-// reconnection strategy.
+// ClientManager supervises an MQTT client connection. Its role is to handle connection events and
+// apply reconnection strategy.
 type ClientManager struct {
 	client      Client
 	PostConnect postConnect
@@ -45,14 +42,14 @@ func (cm ClientManager) Stop() {
 	// TODO
 }
 
-// Connect loop with backoff
+// connect manage the reconnection loop and apply the define backoff to avoid overloading the server.
 func (cm ClientManager) connect(msgs chan<- Message) error {
 	var backoff Backoff // TODO Probably group backoff calculation features with connection manager.
 
 	for {
 		if err := cm.client.Connect(msgs); err != nil {
 			log.Printf("Connection error: %v\n", err)
-			time.Sleep(backoff.Duration()) // Do we want a function backoff.Sleep() ?)
+			backoff.Wait()
 		} else {
 			break
 		}

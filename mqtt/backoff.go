@@ -54,6 +54,11 @@ func (b *Backoff) Duration() time.Duration {
 	return d
 }
 
+// Wait sleeps for backoff duration for current attempt.
+func (b *Backoff) Wait() {
+	time.Sleep(b.Duration())
+}
+
 // DurationForAttempt returns a duration for an attempt number, in a stateless way.
 func (b *Backoff) DurationForAttempt(attempt int) time.Duration {
 	b.setDefault()
