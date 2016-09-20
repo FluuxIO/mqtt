@@ -31,7 +31,8 @@ type OptConnect struct {
 }
 
 // OptTCP defines TCP/IP related parameters. They are used to
-// configure TCP client connection.
+// configure low level TCP client connection. Default should be fine
+// for standard cases.
 type OptTCP struct {
 	ConnectTimeout time.Duration
 }
