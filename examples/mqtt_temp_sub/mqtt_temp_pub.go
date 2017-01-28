@@ -46,6 +46,7 @@ func getTopic(id string) string {
 }
 
 func getTemp() byte {
+	// TODO general cross platform lib to read thermal level
 	out, err := exec.Command("sysctl", "-n", "machdep.xcpm.cpu_thermal_level").Output()
 	if err != nil {
 		log.Println("Cannot read CPU temperature: ", err)
