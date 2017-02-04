@@ -67,6 +67,7 @@ func (pdu PDUConnect) Marshall() bytes.Buffer {
 	return packet
 }
 
+// Size calculates variable length part of CONNECT MQTT packets.
 func (pdu PDUConnect) Size() int {
 	length := 10 // This is the base length for variable part, without optional fields
 
@@ -83,7 +84,6 @@ func (pdu PDUConnect) Size() int {
 	return length
 }
 
-// TODO write benchmark to compare Marshall and Marshall2
 // TODO Compare number of allocations to check if we can still reduce further
 // allocation numbers.
 func (pdu PDUConnect) Marshall2() []byte {
@@ -91,16 +91,15 @@ func (pdu PDUConnect) Marshall2() []byte {
 	buf := make([]byte, pdu.Size()+fixedLength)
 
 	// Fixed headers
-	var fixedHeaderFlags byte
-	buf[0] = connectType<<4 | fixedHeaderFlags
+	buf[0] = connectType << 4
 	buf[1] = byte(pdu.Size())
 
 	// Variable headers
-	copy(buf[2:8], encodeProtocolName(pdu.ProtocolName)) // TODO Resolve default value here
+	copy(buf[2:8], encodeProtocolName(pdu.ProtocolName))
 	buf[8] = encodeProtocolLevel(pdu.ProtocolLevel)
 	buf[9] = byte(pdu.connectFlag())
 	binary.BigEndian.PutUint16(buf[10:12], uint16(pdu.Keepalive))
-	nextPos := 12 + stringSize(pdu.ClientID) // TODO Does not work for default value
+	nextPos := 12 + stringSize(pdu.ClientID) // TODO Does not work for custom protocol name as position could be different
 	copy(buf[12:nextPos], encodeClientID(pdu.ClientID))
 
 	if pdu.WillFlag && len(pdu.WillTopic) > 0 {
@@ -111,7 +110,7 @@ func (pdu PDUConnect) Marshall2() []byte {
 	if len(pdu.Username) > 0 {
 		nextPos = copyBufferString(buf, nextPos, pdu.Username)
 		if len(pdu.Password) > 0 {
-			nextPos = copyBufferString(buf, nextPos, pdu.Password)
+			copyBufferString(buf, nextPos, pdu.Password)
 		}
 	}
 
@@ -128,9 +127,7 @@ func (pdu PDUConnect) connectFlag() int {
 		if pdu.WillQOS > 0 {
 			willQOS = pdu.WillQOS
 		}
-		if pdu.WillRetain {
-			willRetain = true
-		}
+		willRetain = pdu.WillRetain
 	}
 
 	usernameFlag, passwordFlag := false, false
@@ -142,7 +139,7 @@ func (pdu PDUConnect) connectFlag() int {
 	}
 
 	return bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
-			bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1
+		bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1
 }
 
 func encodeClientID(clientID string) []byte {
