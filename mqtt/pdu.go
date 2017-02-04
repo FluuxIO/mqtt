@@ -67,6 +67,57 @@ func (pdu PDUConnect) Marshall() bytes.Buffer {
 	return packet
 }
 
+func (pdu PDUConnect) Size() int {
+	length := 10 // This is the base length for variable part, without optional fields
+
+	// TODO This is just formal / cosmetic, but it would be nice to support any protocol names
+	length += stringSize(pdu.ClientID)
+	if pdu.WillFlag {
+		length += stringSize(pdu.WillTopic)
+		length += stringSize(pdu.WillMessage)
+	}
+	if len(pdu.Username) > 0 {
+		length += stringSize(pdu.Username)
+		length += stringSize(pdu.Password)
+	}
+	return length
+}
+
+// TODO write benchmark to compare Marshall and Marshall2
+// TODO Compare number of allocations to check if we can still reduce further
+// allocation numbers.
+func (pdu PDUConnect) Marshall2() []byte {
+	fixedLength := 2
+	buf := make([]byte, pdu.Size()+fixedLength)
+
+	// Fixed headers
+	var fixedHeaderFlags byte
+	buf[0] = connectType<<4 | fixedHeaderFlags
+	buf[1] = byte(pdu.Size())
+
+	// Variable headers
+	copy(buf[2:8], encodeProtocolName(pdu.ProtocolName)) // TODO Resolve default value here
+	buf[8] = encodeProtocolLevel(pdu.ProtocolLevel)
+	buf[9] = byte(pdu.connectFlag())
+	binary.BigEndian.PutUint16(buf[10:12], uint16(pdu.Keepalive))
+	nextPos := 12 + stringSize(pdu.ClientID) // TODO Does not work for default value
+	copy(buf[12:nextPos], encodeClientID(pdu.ClientID))
+
+	if pdu.WillFlag && len(pdu.WillTopic) > 0 {
+		nextPos = copyBufferString(buf, nextPos, pdu.WillTopic)
+		nextPos = copyBufferString(buf, nextPos, pdu.WillMessage)
+	}
+
+	if len(pdu.Username) > 0 {
+		nextPos = copyBufferString(buf, nextPos, pdu.Username)
+		if len(pdu.Password) > 0 {
+			nextPos = copyBufferString(buf, nextPos, pdu.Password)
+		}
+	}
+
+	return buf
+}
+
 func (pdu PDUConnect) connectFlag() int {
 	// Only set willFlag if there is actually a topic set.
 	willFlag := pdu.WillFlag && len(pdu.WillTopic) >= 0
@@ -90,8 +141,8 @@ func (pdu PDUConnect) connectFlag() int {
 		}
 	}
 
-	return (bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
-		bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1)
+	return bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
+			bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1
 }
 
 func encodeClientID(clientID string) []byte {
