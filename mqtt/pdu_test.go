@@ -130,6 +130,15 @@ func TestConnAckEncodeDecode(t *testing.T) {
 	ca := &PDUConnAck{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
+
+	// Consolidation test: Compare new and old method
+	buf2 := ca.Marshall2()
+	if !reflect.DeepEqual(buf2, buf.Bytes()) {
+		fmt.Println(buf.Bytes())
+		fmt.Println(buf2)
+		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	}
+
 	if packet, err := PacketRead(&buf); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {

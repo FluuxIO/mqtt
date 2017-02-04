@@ -214,6 +214,7 @@ func (pduConnectDecoder) decode(payload []byte) PDUConnect {
 // PDUConnAck is the PDU sent as a reply to CONNECT control packet.
 // It contains the result of the CONNECT operation.
 type PDUConnAck struct {
+	SessionPresent bool
 	ReturnCode int
 }
 
@@ -227,12 +228,29 @@ func (pdu PDUConnAck) Marshall() bytes.Buffer {
 	variablePart.WriteByte(byte(reserved))
 	variablePart.WriteByte(byte(pdu.ReturnCode))
 
-	fixedHeader := (connackType<<4 | fixedHeaderFlags)
+	fixedHeader := connackType<<4 | fixedHeaderFlags
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
 
 	return packet
+}
+
+func (pdu PDUConnAck) Size() int {
+	return 2
+}
+
+func (pdu PDUConnAck) Marshall2() []byte {
+	fixedLength := 2
+	buf := make([]byte, pdu.Size()+fixedLength)
+
+	buf[0] = connackType << 4
+	buf[1] = byte(pdu.Size())
+	// TODO support Session Present flag:
+	buf[2] = 0
+	buf[3] = byte(pdu.ReturnCode)
+
+	return buf
 }
 
 // ============================================================================
@@ -299,7 +317,7 @@ func (p PDUPublish) Marshall() bytes.Buffer {
 	if p.Qos == 1 || p.Qos == 2 {
 		variablePart.Write(encodeUint16(uint16(p.ID)))
 	}
-	variablePart.Write([]byte(p.Payload))
+	variablePart.Write(p.Payload)
 
 	fixedHeader := (publishType<<4 | bool2int(p.Dup)<<3 | p.Qos<<1 | bool2int(p.Retain))
 	packet.WriteByte(byte(fixedHeader))
