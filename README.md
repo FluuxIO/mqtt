@@ -61,3 +61,23 @@ You can publish a payload payload on a topic with:
 ```
 mosquitto_pub -t "test/topic" -m "message payload" -q 1
 ```
+
+## Setting Mosquitto for testing on Windows 10
+
+After you have install official Mosquitto build from main site, you can run the broker with command:
+
+```
+.\mosquitto.exe -v -c .\mosquitto.conf
+```
+
+You can subscribe with:
+
+```
+.\mosquitto_sub.exe -h 127.0.0.1 -v -t 'test/topic'
+```
+
+You can test publish with:
+
+```
+.\mosquitto_pub.exe -h 127.0.0.1 -t "test/topic" -m "message payload" -q 1
+```
