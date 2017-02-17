@@ -59,7 +59,7 @@ func (pdu PDUConnect) Marshall() bytes.Buffer {
 		}
 	}
 
-	fixedHeader := (connectType<<4 | fixedHeaderFlags)
+	fixedHeader := connectType<<4 | fixedHeaderFlags
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
@@ -215,7 +215,7 @@ func (pduConnectDecoder) decode(payload []byte) PDUConnect {
 // It contains the result of the CONNECT operation.
 type PDUConnAck struct {
 	SessionPresent bool
-	ReturnCode int
+	ReturnCode     int
 }
 
 // Marshall serializes a CONNACK struct as an MQTT control packet.
