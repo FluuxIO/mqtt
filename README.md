@@ -1,6 +1,4 @@
-# Go MQTT
-
-[![Build Status](https://travis-ci.com/processone/gomqtt.svg?token=LakYdvhZT6modd2ZxnSR&branch=master)](https://travis-ci.com/processone/gomqtt)
+# Native Go MQTT Library
 
 This is an MQTT v3.1.1 client library written in Go.
 
