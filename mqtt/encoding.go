@@ -149,7 +149,7 @@ func readRemainingLength(r io.Reader) (int, error) {
 	var value uint32
 	var err error
 	encodedByte := make([]byte, 1)
-	for ok := true; ok; ok = (encodedByte[0]&128 != 0) {
+	for ok := true; ok; ok = encodedByte[0]&128 != 0 {
 		io.ReadFull(r, encodedByte)
 		value += uint32(encodedByte[0]&127) * multiplier
 		multiplier *= 128
@@ -170,7 +170,21 @@ func extractNextString(data []byte) (string, []byte) {
 
 //==============================================================================
 
+// Buffer packet management
+
+// We assume we are provided with a long enough bytes array to write the string into.
+func copyBufferString(buf []byte, pos int, s string) int {
+	nextPos := pos + stringSize(s)
+	copy(buf[pos:nextPos], encodeString(s))
+	return nextPos
+}
+
+//==============================================================================
+
 // Functions to encode specific data types in MQTT
+
+// Strings
+// =======
 
 func encodeString(str string) []byte {
 	length := make([]byte, 2)
@@ -178,11 +192,24 @@ func encodeString(str string) []byte {
 	return append(length, []byte(str)...)
 }
 
+func stringSize(s string) int {
+	if len(s) == 0 {
+		return 0
+	}
+	return 2 + len(s)
+}
+
+// Integers
+// ========
+
 func encodeUint16(num uint16) []byte {
 	bytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(bytes, num)
 	return bytes
 }
+
+// Booleans
+// ========
 
 func bool2int(b bool) int {
 	if b {

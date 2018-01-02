@@ -2,6 +2,8 @@ package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"bytes"
+	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -50,6 +52,15 @@ func TestConnectDecode(t *testing.T) {
 	connect.Password = "testpass"
 
 	buf := connect.Marshall()
+
+	// Consolidation test: Compare new and old method
+	buf2 := connect.Marshall2()
+	if !reflect.DeepEqual(buf2, buf.Bytes()) {
+		fmt.Println(buf.Bytes())
+		fmt.Println(buf2)
+		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	}
+
 	if packet, err := PacketRead(&buf); err != nil {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
@@ -59,6 +70,46 @@ func TestConnectDecode(t *testing.T) {
 				t.Errorf("unmarshalled connect does not match original (%+v) = %+v", p, connect)
 			}
 		}
+	}
+}
+
+func BenchmarkConnectMarshall(b *testing.B) {
+	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
+	connect.CleanSession = true
+	connect.WillFlag = true
+	connect.WillQOS = 1
+	connect.WillRetain = true
+	connect.Keepalive = 42
+	connect.ClientID = "TestClientID"
+	connect.WillTopic = "test/will"
+	connect.WillMessage = "test message"
+	connect.Username = "testuser"
+	connect.Password = "testpass"
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i :=0; i < b.N; i++ {
+		connect.Marshall()
+	}
+}
+
+func BenchmarkConnectMarshall2(b *testing.B) {
+	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
+	connect.CleanSession = true
+	connect.WillFlag = true
+	connect.WillQOS = 1
+	connect.WillRetain = true
+	connect.Keepalive = 42
+	connect.ClientID = "TestClientID"
+	connect.WillTopic = "test/will"
+	connect.WillMessage = "test message"
+	connect.Username = "testuser"
+	connect.Password = "testpass"
+
+    b.ReportAllocs()
+	b.ResetTimer()
+	for i :=0; i < b.N; i++ {
+		connect.Marshall2()
 	}
 }
 
@@ -79,6 +130,15 @@ func TestConnAckEncodeDecode(t *testing.T) {
 	ca := &PDUConnAck{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
+
+	// Consolidation test: Compare new and old method
+	buf2 := ca.Marshall2()
+	if !reflect.DeepEqual(buf2, buf.Bytes()) {
+		fmt.Println(buf.Bytes())
+		fmt.Println(buf2)
+		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	}
+
 	if packet, err := PacketRead(&buf); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {

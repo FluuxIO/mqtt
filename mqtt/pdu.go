@@ -59,12 +59,62 @@ func (pdu PDUConnect) Marshall() bytes.Buffer {
 		}
 	}
 
-	fixedHeader := (connectType<<4 | fixedHeaderFlags)
+	fixedHeader := connectType<<4 | fixedHeaderFlags
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
 
 	return packet
+}
+
+// Size calculates variable length part of CONNECT MQTT packets.
+func (pdu PDUConnect) Size() int {
+	length := 10 // This is the base length for variable part, without optional fields
+
+	// TODO This is just formal / cosmetic, but it would be nice to support any protocol names
+	length += stringSize(pdu.ClientID)
+	if pdu.WillFlag {
+		length += stringSize(pdu.WillTopic)
+		length += stringSize(pdu.WillMessage)
+	}
+	if len(pdu.Username) > 0 {
+		length += stringSize(pdu.Username)
+		length += stringSize(pdu.Password)
+	}
+	return length
+}
+
+// TODO Compare number of allocations to check if we can still reduce further
+// allocation numbers.
+func (pdu PDUConnect) Marshall2() []byte {
+	fixedLength := 2
+	buf := make([]byte, pdu.Size()+fixedLength)
+
+	// Fixed headers
+	buf[0] = connectType << 4
+	buf[1] = byte(pdu.Size())
+
+	// Variable headers
+	copy(buf[2:8], encodeProtocolName(pdu.ProtocolName))
+	buf[8] = encodeProtocolLevel(pdu.ProtocolLevel)
+	buf[9] = byte(pdu.connectFlag())
+	binary.BigEndian.PutUint16(buf[10:12], uint16(pdu.Keepalive))
+	nextPos := 12 + stringSize(pdu.ClientID) // TODO Does not work for custom protocol name as position could be different
+	copy(buf[12:nextPos], encodeClientID(pdu.ClientID))
+
+	if pdu.WillFlag && len(pdu.WillTopic) > 0 {
+		nextPos = copyBufferString(buf, nextPos, pdu.WillTopic)
+		nextPos = copyBufferString(buf, nextPos, pdu.WillMessage)
+	}
+
+	if len(pdu.Username) > 0 {
+		nextPos = copyBufferString(buf, nextPos, pdu.Username)
+		if len(pdu.Password) > 0 {
+			copyBufferString(buf, nextPos, pdu.Password)
+		}
+	}
+
+	return buf
 }
 
 func (pdu PDUConnect) connectFlag() int {
@@ -77,9 +127,7 @@ func (pdu PDUConnect) connectFlag() int {
 		if pdu.WillQOS > 0 {
 			willQOS = pdu.WillQOS
 		}
-		if pdu.WillRetain {
-			willRetain = true
-		}
+		willRetain = pdu.WillRetain
 	}
 
 	usernameFlag, passwordFlag := false, false
@@ -90,8 +138,8 @@ func (pdu PDUConnect) connectFlag() int {
 		}
 	}
 
-	return (bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
-		bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1)
+	return bool2int(passwordFlag)<<7 | bool2int(usernameFlag)<<6 | bool2int(willRetain)<<5 | willQOS<<3 |
+		bool2int(willFlag)<<2 | bool2int(pdu.CleanSession)<<1
 }
 
 func encodeClientID(clientID string) []byte {
@@ -166,7 +214,8 @@ func (pduConnectDecoder) decode(payload []byte) PDUConnect {
 // PDUConnAck is the PDU sent as a reply to CONNECT control packet.
 // It contains the result of the CONNECT operation.
 type PDUConnAck struct {
-	ReturnCode int
+	SessionPresent bool
+	ReturnCode     int
 }
 
 // Marshall serializes a CONNACK struct as an MQTT control packet.
@@ -179,12 +228,29 @@ func (pdu PDUConnAck) Marshall() bytes.Buffer {
 	variablePart.WriteByte(byte(reserved))
 	variablePart.WriteByte(byte(pdu.ReturnCode))
 
-	fixedHeader := (connackType<<4 | fixedHeaderFlags)
+	fixedHeader := connackType<<4 | fixedHeaderFlags
 	packet.WriteByte(byte(fixedHeader))
 	packet.WriteByte(byte(variablePart.Len()))
 	packet.Write(variablePart.Bytes())
 
 	return packet
+}
+
+func (pdu PDUConnAck) Size() int {
+	return 2
+}
+
+func (pdu PDUConnAck) Marshall2() []byte {
+	fixedLength := 2
+	buf := make([]byte, pdu.Size()+fixedLength)
+
+	buf[0] = connackType << 4
+	buf[1] = byte(pdu.Size())
+	// TODO support Session Present flag:
+	buf[2] = 0
+	buf[3] = byte(pdu.ReturnCode)
+
+	return buf
 }
 
 // ============================================================================
@@ -251,7 +317,7 @@ func (p PDUPublish) Marshall() bytes.Buffer {
 	if p.Qos == 1 || p.Qos == 2 {
 		variablePart.Write(encodeUint16(uint16(p.ID)))
 	}
-	variablePart.Write([]byte(p.Payload))
+	variablePart.Write(p.Payload)
 
 	fixedHeader := (publishType<<4 | bool2int(p.Dup)<<3 | p.Qos<<1 | bool2int(p.Retain))
 	packet.WriteByte(byte(fixedHeader))
