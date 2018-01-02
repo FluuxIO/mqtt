@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/processone/gomqtt/mqtt"
+	"fluux.io/gomqtt/mqtt"
 )
 
 func main() {

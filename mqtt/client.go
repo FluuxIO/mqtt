@@ -1,4 +1,4 @@
-package mqtt
+package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 var (
 	// ErrIncorrectConnectResponse is triggered on CONNECT when server
 	// does not reply with CONNACK packet.
-	ErrIncorrectConnectResponse = errors.New("incorrect connect response")
+	ErrIncorrectConnectResponse = errors.New("incorrect mqtt connect response")
 )
 
 const (
@@ -23,6 +23,7 @@ const (
 
 // OptConnect defines optional MQTT connection parameters.
 // MQTT client libraries will default to sensible values.
+// TODO Should this be called OptMQTT?
 type OptConnect struct {
 	ProtocolLevel int
 	ClientID      string
@@ -144,7 +145,13 @@ func (c *Client) Connect(defaultMsgChannel chan<- Message) error {
 func (c *Client) Disconnect() {
 	packet := PDUDisconnect{}
 	c.send(&packet)
-	// TODO Properly terminates receiver and sender and close message channel
+	c.sender.quit <- struct{}{}
+
+	// Terminate client receive channel
+	// TODO Should we really close the channel or let it live in case client reconnects ?
+	close(c.Messages)
+	c.Messages = nil
+	// TODO Properly terminates receiver and sender
 }
 
 // ============================================================================
@@ -227,6 +234,8 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	case <-senderDone:
 		// We do nothing for now: As the sender closes socket, this should
 		// be enough to have read Loop fail and properly shutdown process.
+
+		// TODO: Handle the case when the client is done ?
 	}
 
 	if c.Handler != nil {

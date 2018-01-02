@@ -7,7 +7,7 @@ package main
 import (
 	"log"
 
-	"github.com/processone/gomqtt/mqtt"
+	"fluux.io/gomqtt/mqtt"
 )
 
 func main() {

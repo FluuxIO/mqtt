@@ -20,7 +20,7 @@ TODO: Implement Backoff Ticker channel
 TODO: Implement throttler interface. Throttler could be used to implement various reconnect strategies.
 */
 
-package mqtt
+package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"math"

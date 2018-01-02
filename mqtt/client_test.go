@@ -1,11 +1,11 @@
-package mqtt_test
+package mqtt_test // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"net"
 	"testing"
 	"time"
 
-	"github.com/processone/gomqtt/mqtt"
+	"fluux.io/gomqtt/mqtt"
 )
 
 // TestClient_ConnectTimeout checks that connect will properly timeout and not
