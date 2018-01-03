@@ -17,7 +17,7 @@ type PDUConnect struct {
 	ClientID      string
 	CleanSession  bool
 
-	// TODO: Will should be a sub-struct
+	// TODO: Should 'Will' be a sub-struct ?
 	WillFlag    bool
 	WillTopic   string
 	WillMessage string

@@ -38,7 +38,7 @@ func TestIncrementalConnectFlag(t *testing.T) {
 	assertConnectFlagValue(t, "incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag(), 246)
 }
 
-func TestConnectDecode(t *testing.T) {
+func getConnect() PDUConnect {
 	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
 	connect.CleanSession = true
 	connect.WillFlag = true
@@ -50,7 +50,11 @@ func TestConnectDecode(t *testing.T) {
 	connect.WillMessage = "test message"
 	connect.Username = "testuser"
 	connect.Password = "testpass"
+	return connect
+}
 
+func TestConnectDecode(t *testing.T) {
+	connect := getConnect()
 	buf := connect.Marshall()
 
 	// Consolidation test: Compare new and old method
@@ -74,41 +78,21 @@ func TestConnectDecode(t *testing.T) {
 }
 
 func BenchmarkConnectMarshall(b *testing.B) {
-	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
-	connect.CleanSession = true
-	connect.WillFlag = true
-	connect.WillQOS = 1
-	connect.WillRetain = true
-	connect.Keepalive = 42
-	connect.ClientID = "TestClientID"
-	connect.WillTopic = "test/will"
-	connect.WillMessage = "test message"
-	connect.Username = "testuser"
-	connect.Password = "testpass"
+	connect := getConnect()
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i :=0; i < b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		connect.Marshall()
 	}
 }
 
 func BenchmarkConnectMarshall2(b *testing.B) {
-	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
-	connect.CleanSession = true
-	connect.WillFlag = true
-	connect.WillQOS = 1
-	connect.WillRetain = true
-	connect.Keepalive = 42
-	connect.ClientID = "TestClientID"
-	connect.WillTopic = "test/will"
-	connect.WillMessage = "test message"
-	connect.Username = "testuser"
-	connect.Password = "testpass"
+	connect := getConnect()
 
-    b.ReportAllocs()
+	b.ReportAllocs()
 	b.ResetTimer()
-	for i :=0; i < b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		connect.Marshall2()
 	}
 }
