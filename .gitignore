@@ -31,3 +31,6 @@ coverage.out
 .DS_Store
 
 *.coverprofile
+
+codeship.aes
+codeship.env

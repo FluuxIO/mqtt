@@ -1,5 +1,7 @@
 # Native Go MQTT Library
 
+[ ![Codeship Status for FluuxIO/gomqtt](https://app.codeship.com/projects/75c09d70-d43d-0135-b59a-12b6e6b26eee/status?branch=master)](https://app.codeship.com/projects/262977) [![codecov](https://codecov.io/gh/FluuxIO/gomqtt/branch/master/graph/badge.svg)](https://codecov.io/gh/FluuxIO/gomqtt)
+
 This is an MQTT v3.1.1 client library written in Go.
 
 The library is inspired by my Go XMPP library (gox) and tries to use similar consistent API.
