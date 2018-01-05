@@ -1,5 +1,7 @@
 version: "{build}"
 
+clone_folder: c:\gopath\src\fluux.io\gomqtt
+
 platform: x64
 
 branches:
