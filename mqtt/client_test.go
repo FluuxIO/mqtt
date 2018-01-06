@@ -1,7 +1,6 @@
 package mqtt_test // import "fluux.io/gomqtt/mqtt"
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"testing"
@@ -150,9 +149,12 @@ func (mock *MQTTServerMock) loop() {
 		if err != nil {
 			select {
 			case <-mock.done:
-				fmt.Println("Mock loop received done")
 				return
 			default:
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					// timeout error
+					return
+				}
 				mock.t.Error("mqttServerMock accept error:", err.Error())
 			}
 			return
