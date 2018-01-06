@@ -141,7 +141,7 @@ func (mock *MQTTServerMock) loop() {
 	listener := mock.listener
 	for {
 		if l, ok := listener.(*net.TCPListener); ok {
-			l.SetDeadline(time.Now().Add(100 * time.Millisecond))
+			l.SetDeadline(time.Now().Add(acceptTimeout))
 		}
 		conn, err := listener.Accept()
 		if err != nil {
