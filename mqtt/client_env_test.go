@@ -1,3 +1,4 @@
+// +build !windows
 package mqtt_test // import "fluux.io/gomqtt/mqtt"
 
 import "time"
