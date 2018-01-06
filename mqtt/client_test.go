@@ -1,11 +1,12 @@
 package mqtt_test // import "fluux.io/gomqtt/mqtt"
 
 import (
+	"fmt"
 	"net"
 	"testing"
 	"time"
 
-	"fmt"
+	"log"
 
 	"fluux.io/gomqtt/mqtt"
 )
@@ -96,6 +97,7 @@ type MQTTServerMock struct {
 	listener    net.Listener
 	connections []net.Conn
 	done        chan struct{}
+	cleanup     chan struct{}
 }
 
 func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) {
@@ -110,23 +112,20 @@ func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) {
 func (mock *MQTTServerMock) Stop() {
 	close(mock.done)
 
-	// Close all existing connections
-	for _, c := range mock.connections {
-		if err := c.Close(); err != nil {
-			fmt.Println("Cannot close connection", c)
-		}
-	}
+	// Check that main MQTT mock server loop is actually terminated
+	<-mock.cleanup
 
 	// Shutdown server mock
 	if mock.listener != nil {
 		if err := mock.listener.Close(); err != nil {
-			fmt.Println("cannot close listener", err)
+			log.Println("cannot close listener", err)
 		}
 	}
 }
 
 func (mock *MQTTServerMock) init() error {
 	mock.done = make(chan struct{})
+	mock.cleanup = make(chan struct{})
 
 	l, err := net.Listen("tcp", testMQTTAddress)
 	if err != nil {
@@ -138,12 +137,17 @@ func (mock *MQTTServerMock) init() error {
 }
 
 func (mock *MQTTServerMock) loop() {
+	defer mock.loopCleanup()
 	listener := mock.listener
 	for {
+		if l, ok := listener.(*net.TCPListener); ok {
+			l.SetDeadline(time.Now().Add(100 * time.Millisecond))
+		}
 		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-mock.done:
+				fmt.Println("Mock loop received done")
 				return
 			default:
 				mock.t.Error("mqttServerMock accept error:", err.Error())
@@ -154,6 +158,16 @@ func (mock *MQTTServerMock) loop() {
 		// TODO Create and pass a context to cancel the handler if they are still around = avoid possible leak on complex handlers
 		go mock.handler(mock.t, conn)
 	}
+}
+
+func (mock *MQTTServerMock) loopCleanup() {
+	// Close all existing connections
+	for _, c := range mock.connections {
+		if err := c.Close(); err != nil {
+			log.Println("Cannot close connection", c)
+		}
+	}
+	close(mock.cleanup)
 }
 
 //=============================================================================
@@ -187,4 +201,5 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 		c.Write(buf)
 	default:
 	}
+	log.Println("Unauthorized handler done")
 }
