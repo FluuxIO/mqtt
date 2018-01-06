@@ -2,13 +2,16 @@ package mqtt_test // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"testing"
 	"time"
 
-	"log"
-
 	"fluux.io/gomqtt/mqtt"
+)
+
+const (
+	acceptTimeout = 300 * time.Millisecond
 )
 
 // TestClient_ConnectTimeout checks that connect will properly timeout and not
