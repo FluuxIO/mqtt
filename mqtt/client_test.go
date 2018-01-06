@@ -121,7 +121,7 @@ func (mock *MQTTServerMock) init() error {
 
 	l, err := net.Listen("tcp", testMQTTAddress)
 	if err != nil {
-		mock.t.Errorf("mqttServerMock cannot listen on address: %q", testMQTTAddress)
+		mock.t.Errorf("mqttServerMock cannot listen on address: %s (%s)", testMQTTAddress, err)
 		return err
 	}
 	mock.listener = l
