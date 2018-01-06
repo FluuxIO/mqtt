@@ -110,16 +110,17 @@ func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) {
 func (mock *MQTTServerMock) Stop() {
 	close(mock.done)
 
-	if mock.listener != nil {
-		if err := mock.listener.Close(); err != nil {
-			fmt.Println("cannot close listener", err)
-		}
-	}
-
 	// Close all existing connections
 	for _, c := range mock.connections {
 		if err := c.Close(); err != nil {
 			fmt.Println("Cannot close connection", c)
+		}
+	}
+
+	// Shutdown server mock
+	if mock.listener != nil {
+		if err := mock.listener.Close(); err != nil {
+			fmt.Println("cannot close listener", err)
 		}
 	}
 }
