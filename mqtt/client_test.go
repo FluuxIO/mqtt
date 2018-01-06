@@ -179,7 +179,7 @@ func (mock *MQTTServerMock) loopCleanup() {
 // Basic MQTT Server Mock Handlers.
 
 // handlerConnackSuccess sends connack to client without even reading from socket.
-func handlerConnackSuccess(t *testing.T, c net.Conn) {
+func handlerConnackSuccess(_ *testing.T, c net.Conn) {
 	ack := mqtt.PDUConnAck{}
 	buf := ack.Marshall()
 	c.Write(buf)
