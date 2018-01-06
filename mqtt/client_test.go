@@ -154,7 +154,7 @@ func (mock *MQTTServerMock) loop() {
 func handlerConnackSuccess(t *testing.T, c net.Conn) {
 	ack := mqtt.PDUConnAck{}
 	buf := ack.Marshall()
-	buf.WriteTo(c)
+	c.Write(buf)
 }
 
 func handlerUnauthorized(t *testing.T, c net.Conn) {
@@ -175,7 +175,7 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 		}
 		ack := mqtt.PDUConnAck{ReturnCode: mqtt.ConnRefusedBadUsernameOrPassword}
 		buf := ack.Marshall()
-		buf.WriteTo(c)
+		c.Write(buf)
 	default:
 	}
 }

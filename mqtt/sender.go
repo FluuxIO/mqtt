@@ -1,27 +1,25 @@
 package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
-	"bytes"
-	"io"
 	"net"
 )
 
 // Sender need the following interface:
 // - Net.conn to send TCP packets
 // - Error send channel to trigger teardown on send error
-// - SendChannel receiving *bytes.Buffer
+// - SendChannel receiving []byte
 // - KeepaliveCtl to reset keepalive packet timer after a send
 // - Way to stop the sender when client wants to stop / disconnect
 
 type sender struct {
 	done <-chan struct{}
-	out  chan<- io.WriterTo
+	out  chan<- []byte
 	quit chan<- struct{}
 }
 
 func initSender(conn net.Conn, keepalive int) sender {
 	tearDown := make(chan struct{})
-	out := make(chan io.WriterTo)
+	out := make(chan []byte)
 	quit := make(chan struct{})
 
 	// Start go routine that manage keepalive timer:
@@ -30,7 +28,7 @@ func initSender(conn net.Conn, keepalive int) sender {
 		keepaliveCtl = startKeepalive(keepalive, func() {
 			pingReq := PDUPingReq{}
 			buf := pingReq.Marshall()
-			buf.WriteTo(conn)
+			conn.Write(buf)
 		})
 	}
 
@@ -39,12 +37,12 @@ func initSender(conn net.Conn, keepalive int) sender {
 	return s
 }
 
-func senderLoop(conn net.Conn, keepaliveCtl chan int, out <-chan io.WriterTo, quit <-chan struct{}, tearDown chan<- struct{}) {
+func senderLoop(conn net.Conn, keepaliveCtl chan int, out <-chan []byte, quit <-chan struct{}, tearDown chan<- struct{}) {
 Loop:
 	for {
 		select {
 		case buf := <-out:
-			buf.WriteTo(conn) // TODO Trigger teardown and stop on write error
+			conn.Write(buf) // TODO Trigger teardown and stop on write error
 			keepaliveSignal(keepaliveCtl, keepaliveReset)
 		case <-quit:
 			// Client want this sender to terminate
@@ -54,7 +52,7 @@ Loop:
 	}
 }
 
-func (s sender) send(buf *bytes.Buffer) {
+func (s sender) send(buf []byte) {
 	s.out <- buf
 }
 

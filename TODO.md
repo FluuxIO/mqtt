@@ -16,10 +16,10 @@
 + Ability to set clientID.
 + Handle teardown & reconnect from either sender or receiver.
 + Support persistent session option
++ Use new Marshaller: Preallocate buffer of correct size in marshallers to improve performance (+buffer write can return errors).
 
 ## TODO
 
-- Preallocate buffer of correct size in marshallers to improve performance (+buffer write can return errors).
 - Rename PDU to a name more in line with MQTT specification.
 - Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages

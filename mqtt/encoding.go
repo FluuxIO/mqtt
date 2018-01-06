@@ -1,7 +1,6 @@
 package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -60,7 +59,7 @@ var (
 
 // Marshaller interface is shared by all MQTT control packets
 type Marshaller interface {
-	Marshall() bytes.Buffer
+	Marshall() []byte
 }
 
 // =============================================================================

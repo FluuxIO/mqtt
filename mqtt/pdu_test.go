@@ -2,7 +2,6 @@ package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
 	"bytes"
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -57,15 +56,8 @@ func TestConnectDecode(t *testing.T) {
 	connect := getConnect()
 	buf := connect.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := connect.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
 		switch p := packet.(type) {
@@ -73,6 +65,8 @@ func TestConnectDecode(t *testing.T) {
 			if p != connect {
 				t.Errorf("unmarshalled connect does not match original (%+v) = %+v", p, connect)
 			}
+		default:
+			t.Error("Incorrect packet type for connect")
 		}
 	}
 }
@@ -84,16 +78,6 @@ func BenchmarkConnectMarshall(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		connect.Marshall()
-	}
-}
-
-func BenchmarkConnectMarshall2(b *testing.B) {
-	connect := getConnect()
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		connect.Marshall2()
 	}
 }
 
@@ -115,15 +99,8 @@ func TestConnAckEncodeDecode(t *testing.T) {
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := ca.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
@@ -131,6 +108,8 @@ func TestConnAckEncodeDecode(t *testing.T) {
 			if p.ReturnCode != returnCode {
 				t.Errorf("incorrect result code (%d) = %d", p.ReturnCode, returnCode)
 			}
+		default:
+			t.Error("Incorrect packet type for connack")
 		}
 	}
 }
@@ -143,12 +122,15 @@ func TestDisconnect(t *testing.T) {
 	disconnect := PDUDisconnect{}
 	buf := disconnect.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := disconnect.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Error("cannot decode disconnect control packet")
+	} else {
+		switch packet.(type) {
+		case PDUDisconnect:
+		default:
+			t.Error("Incorrect packet type for disconnect")
+		}
 	}
 }
 
@@ -164,18 +146,10 @@ func TestPublishDecode(t *testing.T) {
 	publish.Retain = false
 	publish.Topic = "test/1"
 	publish.Payload = []byte("Hi")
-
 	buf := publish.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := publish.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
 		t.Errorf("cannot decode publish packet: %q", err)
 	} else {
 		switch p := packet.(type) {
@@ -215,22 +189,18 @@ func TestPubAckEncodeDecode(t *testing.T) {
 	pa.ID = id
 	buf := pa.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := pa.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
-		t.Error("cannot decode connack control packet")
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Error("cannot decode puback control packet")
 	} else {
 		switch p := packet.(type) {
 		case PDUPubAck:
 			if p.ID != id {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, id)
 			}
+
+		default:
+			t.Error("incorrect packet type for puback")
 		}
 	}
 }
@@ -250,15 +220,8 @@ func TestSubscribeDecode(t *testing.T) {
 
 	buf := subscribe.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := subscribe.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
 		t.Errorf("cannot decode subscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {
@@ -281,6 +244,7 @@ func TestSubscribeDecode(t *testing.T) {
 			if parsedt2.QOS != t2.QOS {
 				t.Errorf("incorrect topic qos (%q) = %q", parsedt2.QOS, t2.QOS)
 			}
+
 		default:
 			t.Error("Incorrect packet type for subscribe")
 		}
@@ -298,15 +262,8 @@ func TestSubAckEncodeDecode(t *testing.T) {
 	sa.ReturnCodes = []int{0x00, 0x01, 0x02, 0x80}
 	buf := sa.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := sa.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
@@ -319,6 +276,7 @@ func TestSubAckEncodeDecode(t *testing.T) {
 					t.Errorf("incorrect result code (%d) = %d", p.ReturnCodes[i], rc)
 				}
 			}
+
 		default:
 			t.Error("Incorrect packet type for suback")
 		}
@@ -341,16 +299,9 @@ func TestUnsubscribeDecode(t *testing.T) {
 
 	buf := unsub.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := unsub.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
-		t.Errorf("cannot decode unsub packet: %q", err)
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Errorf("cannot decode unsubscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {
 		case PDUUnsubscribe:
@@ -368,8 +319,9 @@ func TestUnsubscribeDecode(t *testing.T) {
 			if parsedt2 != t2 {
 				t.Errorf("incorrect topic name (%q) = %q", parsedt2, t2)
 			}
+
 		default:
-			t.Error("Incorrect packet type for unsub")
+			t.Error("Incorrect packet type for unsubscribe")
 		}
 	}
 }
@@ -384,22 +336,16 @@ func TestUnsubAckEncodeDecode(t *testing.T) {
 	ua.ID = id
 	buf := ua.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := ua.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
-	}
-
-	if packet, err := PacketRead(&buf); err != nil {
-		t.Error("cannot decode connack control packet")
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Error("cannot decode unsuback control packet")
 	} else {
 		switch p := packet.(type) {
 		case PDUUnsubAck:
 			if p.ID != ua.ID {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, ua.ID)
 			}
+
 		default:
 			t.Error("Incorrect packet type for unsuback")
 		}
@@ -414,13 +360,18 @@ func TestPingReq(t *testing.T) {
 	pingReq := PDUPingReq{}
 	buf := pingReq.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := pingReq.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Error("cannot decode pingreq control packet")
+	} else {
+		switch packet.(type) {
+		case PDUPingReq:
+
+		default:
+			t.Error("Incorrect packet type for pingreq")
+		}
 	}
+
 }
 
 // ============================================================================
@@ -431,11 +382,15 @@ func TestPingResp(t *testing.T) {
 	pingResp := PDUPingResp{}
 	buf := pingResp.Marshall()
 
-	// Consolidation test: Compare new and old method
-	buf2 := pingResp.Marshall2()
-	if !reflect.DeepEqual(buf2, buf.Bytes()) {
-		fmt.Println(buf.Bytes())
-		fmt.Println(buf2)
-		t.Errorf("New Buffer result is different from old protocol implementation: %+v", buf2)
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Error("cannot decode pingresp control packet")
+	} else {
+		switch p := packet.(type) {
+		case PDUPingResp:
+
+		default:
+			t.Error("Incorrect packet type for pingresp: ", reflect.TypeOf(p).Elem())
+		}
 	}
 }

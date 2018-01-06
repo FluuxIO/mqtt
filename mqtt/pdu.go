@@ -1,7 +1,6 @@
 package mqtt // import "fluux.io/gomqtt/mqtt"
 
 import (
-	"bytes"
 	"encoding/binary"
 )
 
@@ -36,37 +35,6 @@ func (pdu *PDUConnect) SetWill(topic string, message string, qos int) {
 	pdu.WillMessage = message
 }
 
-// Marshall serializes a CONNECT struct as an MQTT control packet.
-func (pdu PDUConnect) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	variablePart.Write(encodeProtocolName(pdu.ProtocolName))
-	variablePart.WriteByte(encodeProtocolLevel(pdu.ProtocolLevel))
-	variablePart.WriteByte(byte(pdu.connectFlag()))
-	variablePart.Write(encodeUint16(uint16(pdu.Keepalive)))
-	variablePart.Write(encodeClientID(pdu.ClientID))
-
-	if pdu.WillFlag && len(pdu.WillTopic) > 0 {
-		variablePart.Write(encodeString(pdu.WillTopic))
-		variablePart.Write(encodeString(pdu.WillMessage))
-	}
-
-	if len(pdu.Username) > 0 {
-		variablePart.Write(encodeString(pdu.Username))
-		if len(pdu.Password) > 0 {
-			variablePart.Write(encodeString(pdu.Password))
-		}
-	}
-
-	fixedHeader := connectType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 // Size calculates variable length part of CONNECT MQTT packets.
 func (pdu PDUConnect) PayloadSize() int {
 	length := 10 // This is the base length for variable part, without optional fields
@@ -84,9 +52,8 @@ func (pdu PDUConnect) PayloadSize() int {
 	return length
 }
 
-// TODO Compare number of allocations to check if we can still reduce further
-// allocation numbers.
-func (pdu PDUConnect) Marshall2() []byte {
+// Marshall serializes a CONNECT struct as an MQTT control packet.
+func (pdu PDUConnect) Marshall() []byte {
 	headerSize := 2
 	buf := make([]byte, headerSize+pdu.PayloadSize())
 
@@ -218,29 +185,12 @@ type PDUConnAck struct {
 	ReturnCode     int
 }
 
-// Marshall serializes a CONNACK struct as an MQTT control packet.
-func (pdu PDUConnAck) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	reserved := 0
-
-	variablePart.WriteByte(byte(reserved))
-	variablePart.WriteByte(byte(pdu.ReturnCode))
-
-	fixedHeader := connackType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUConnAck) PayloadSize() int {
 	return 2
 }
 
-func (pdu PDUConnAck) Marshall2() []byte {
+// Marshall serializes a CONNACK struct as an MQTT control packet.
+func (pdu PDUConnAck) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, pdu.PayloadSize()+fixedLength)
 
@@ -273,16 +223,7 @@ func (connAckDecoder) decode(payload []byte) PDUConnAck {
 type PDUDisconnect struct{}
 
 // Marshall serializes a DISCONNECT struct as an MQTT control packet.
-func (PDUDisconnect) Marshall() bytes.Buffer {
-	var packet bytes.Buffer
-
-	fixedHeader := disconnectType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(0))
-	return packet
-}
-
-func (PDUDisconnect) Marshall2() []byte {
+func (PDUDisconnect) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength)
 
@@ -317,25 +258,6 @@ type PDUPublish struct {
 	Payload []byte
 }
 
-// Marshall serializes a PUBLISH struct as an MQTT control packet.
-func (pdu PDUPublish) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	variablePart.Write(encodeString(pdu.Topic))
-	if pdu.Qos == 1 || pdu.Qos == 2 {
-		variablePart.Write(encodeUint16(uint16(pdu.ID)))
-	}
-	variablePart.Write(pdu.Payload)
-
-	fixedHeader := publishType<<4 | bool2int(pdu.Dup)<<3 | pdu.Qos<<1 | bool2int(pdu.Retain)
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 // TODO Find a better name
 // From spec, Size is not size of the payload but of the variable header
 func (pdu PDUPublish) PayloadSize() int {
@@ -347,7 +269,8 @@ func (pdu PDUPublish) PayloadSize() int {
 	return length
 }
 
-func (pdu PDUPublish) Marshall2() []byte {
+// Marshall serializes a PUBLISH struct as an MQTT control packet.
+func (pdu PDUPublish) Marshall() []byte {
 	headerSize := 2
 	buf := make([]byte, headerSize+pdu.PayloadSize())
 
@@ -409,27 +332,12 @@ type PDUPubAck struct {
 	ID int
 }
 
-// Marshall serializes a PUBACK struct as an MQTT control packet.
-func (pdu PDUPubAck) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	variablePart.Write(encodeUint16(uint16(pdu.ID)))
-
-	fixedHeaderFlags := 0
-	fixedHeader := pubackType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUPubAck) PayloadSize() int {
 	return 2
 }
 
-func (pdu PDUPubAck) Marshall2() []byte {
+// Marshall serializes a PUBACK struct as an MQTT control packet.
+func (pdu PDUPubAck) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength+pdu.PayloadSize())
 
@@ -471,33 +379,6 @@ type PDUSubscribe struct {
 	Topics []Topic
 }
 
-// Marshall serializes a SUBSCRIBE struct as an MQTT control packet.
-func (pdu PDUSubscribe) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	// Empty topic list is incorrect. Server must disconnect.
-	if len(pdu.Topics) == 0 {
-		return packet
-	}
-
-	variablePart.Write(encodeUint16(uint16(pdu.ID)))
-
-	for _, topic := range pdu.Topics {
-		variablePart.Write(encodeString(topic.Name))
-		// TODO Check that QOS is valid
-		variablePart.WriteByte(byte(topic.QOS))
-	}
-
-	fixedHeaderFlags := 2 // mandatory value
-	fixedHeader := subscribeType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUSubscribe) PayloadSize() int {
 	length := 2
 	for _, topic := range pdu.Topics {
@@ -506,7 +387,8 @@ func (pdu PDUSubscribe) PayloadSize() int {
 	return length
 }
 
-func (pdu PDUSubscribe) Marshall2() []byte {
+// Marshall serializes a SUBSCRIBE struct as an MQTT control packet.
+func (pdu PDUSubscribe) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength+pdu.PayloadSize())
 
@@ -561,33 +443,14 @@ type PDUSubAck struct {
 	ReturnCodes []int
 }
 
-// Marshall serializes a SUBACK struct as an MQTT control packet.
-func (pdu PDUSubAck) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	variablePart.Write(encodeUint16(uint16(pdu.ID)))
-
-	for _, rc := range pdu.ReturnCodes {
-		variablePart.WriteByte(byte(rc))
-	}
-
-	fixedHeaderFlags := 0
-	fixedHeader := subackType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUSubAck) PayloadSize() int {
 	length := 2
 	length += len(pdu.ReturnCodes)
 	return length
 }
 
-func (pdu PDUSubAck) Marshall2() []byte {
+// Marshall serializes a SUBACK struct as an MQTT control packet.
+func (pdu PDUSubAck) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength+pdu.PayloadSize())
 
@@ -642,31 +505,6 @@ type PDUUnsubscribe struct {
 	Topics []string
 }
 
-// Marshall serializes a UNSUBSCRIBE struct as an MQTT control packet.
-func (pdu PDUUnsubscribe) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	// Empty topic list is incorrect. Server must disconnect.
-	if len(pdu.Topics) == 0 {
-		return packet
-	}
-
-	variablePart.Write(encodeUint16(uint16(pdu.ID)))
-
-	for _, topic := range pdu.Topics {
-		variablePart.Write(encodeString(topic))
-	}
-
-	fixedHeaderFlags := 2 // mandatory value
-	fixedHeader := unsubscribeType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUUnsubscribe) PayloadSize() int {
 	length := 2
 	for _, topic := range pdu.Topics {
@@ -675,7 +513,8 @@ func (pdu PDUUnsubscribe) PayloadSize() int {
 	return length
 }
 
-func (pdu PDUUnsubscribe) Marshall2() []byte {
+// Marshall serializes a UNSUBSCRIBE struct as an MQTT control packet.
+func (pdu PDUUnsubscribe) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength+pdu.PayloadSize())
 
@@ -724,27 +563,12 @@ type PDUUnsubAck struct {
 	ID int
 }
 
-// Marshall serializes a UNSUBACK struct as an MQTT control packet.
-func (pdu PDUUnsubAck) Marshall() bytes.Buffer {
-	var variablePart bytes.Buffer
-	var packet bytes.Buffer
-
-	variablePart.Write(encodeUint16(uint16(pdu.ID)))
-
-	fixedHeaderFlags := 2 // Mandatory value
-	fixedHeader := unsubackType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(variablePart.Len()))
-	packet.Write(variablePart.Bytes())
-
-	return packet
-}
-
 func (pdu PDUUnsubAck) PayloadSize() int {
 	return 2
 }
 
-func (pdu PDUUnsubAck) Marshall2() []byte {
+// Marshall serializes a UNSUBACK struct as an MQTT control packet.
+func (pdu PDUUnsubAck) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength+pdu.PayloadSize())
 
@@ -783,17 +607,7 @@ type PDUPingReq struct {
 }
 
 // Marshall serializes a PINGREQ struct as an MQTT control packet.
-func (pdu PDUPingReq) Marshall() bytes.Buffer {
-	var packet bytes.Buffer
-	fixedHeaderFlags := 0
-	fixedHeader := pingreqType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(0))
-
-	return packet
-}
-
-func (pdu PDUPingReq) Marshall2() []byte {
+func (pdu PDUPingReq) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength)
 
@@ -824,18 +638,7 @@ type PDUPingResp struct {
 }
 
 // Marshall serializes a PINGRESP struct as an MQTT control packet.
-func (pdu PDUPingResp) Marshall() bytes.Buffer {
-	var packet bytes.Buffer
-	fixedHeaderFlags := 0
-
-	fixedHeader := pingrespType<<4 | fixedHeaderFlags
-	packet.WriteByte(byte(fixedHeader))
-	packet.WriteByte(byte(0))
-
-	return packet
-}
-
-func (pdu PDUPingResp) Marshall2() []byte {
+func (pdu PDUPingResp) Marshall() []byte {
 	fixedLength := 2
 	buf := make([]byte, fixedLength)
 
@@ -852,7 +655,7 @@ type pduPingRespDecoder struct{}
 
 var pduPingResp pduPingRespDecoder
 
-func (pduPingRespDecoder) decode(payload []byte) *PDUPingResp {
-	ping := new(PDUPingResp)
+func (pduPingRespDecoder) decode(payload []byte) PDUPingResp {
+	var ping PDUPingResp
 	return ping
 }

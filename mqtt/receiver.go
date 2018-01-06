@@ -59,7 +59,7 @@ func sendAckIfNeeded(pkt Marshaller, s sender) {
 		if p.Qos == 1 {
 			puback := PDUPubAck{ID: p.ID}
 			buf := puback.Marshall()
-			s.send(&buf)
+			s.send(buf)
 		}
 	}
 }

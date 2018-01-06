@@ -197,7 +197,7 @@ func (c *Client) connect() error {
 	connectPacket.ClientID = c.ClientID
 	connectPacket.CleanSession = c.CleanSession
 	buf := connectPacket.Marshall()
-	buf.WriteTo(conn)
+	conn.Write(buf)
 
 	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
 	var connack Marshaller
@@ -248,7 +248,7 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 func (c *Client) send(packet Marshaller) {
 	buf := packet.Marshall()
 	sender := c.getSender()
-	sender.send(&buf)
+	sender.send(buf)
 }
 
 // ============================================================================
