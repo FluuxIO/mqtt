@@ -38,7 +38,7 @@ Loop:
 
 		// Only broadcast message back to client when we receive publish packets
 		switch packetType := p.(type) {
-		case PDUPublish:
+		case CPPublish:
 			m := Message{}
 			m.Topic = packetType.Topic
 			m.Payload = packetType.Payload
@@ -55,9 +55,9 @@ Loop:
 // Send acks if needed, depending on packet QOS
 func sendAckIfNeeded(pkt Marshaller, s sender) {
 	switch p := pkt.(type) {
-	case PDUPublish:
+	case CPPublish:
 		if p.Qos == 1 {
-			puback := PDUPubAck{ID: p.ID}
+			puback := CPPubAck{ID: p.ID}
 			buf := puback.Marshall()
 			s.send(buf)
 		}
