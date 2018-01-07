@@ -87,27 +87,27 @@ func ConnAckError(returnCode int) error {
 func Decode(packetType int, fixedHeaderFlags int, payload []byte) Marshaller {
 	switch packetType {
 	case connectType:
-		return pduConnect.decode(payload)
+		return connectPacket.decode(payload)
 	case connackType:
-		return pduConnAck.decode(payload)
+		return connAckPacket.decode(payload)
 	case publishType:
-		return pduPublish.decode(fixedHeaderFlags, payload)
+		return publishPacket.decode(fixedHeaderFlags, payload)
 	case pubackType:
-		return pduPubAck.decode(payload)
+		return pubAckPacket.decode(payload)
 	case subscribeType:
-		return pduSubscribe.decode(payload)
+		return subscribePacket.decode(payload)
 	case subackType:
-		return pduSubAck.decode(payload)
+		return subAckPacket.decode(payload)
 	case unsubscribeType:
-		return pduUnsubscribe.decode(payload)
+		return unsubscribePacket.decode(payload)
 	case unsubackType:
-		return pduUnsubAck.decode(payload)
+		return unsubAckPacket.decode(payload)
 	case pingreqType:
-		return pduPingReq.decode(payload)
+		return pingReqPacket.decode(payload)
 	case pingrespType:
-		return pduPingResp.decode(payload)
+		return pingRespPacket.decode(payload)
 	case disconnectType:
-		return pduDisconnect.decode(payload)
+		return disconnectPacket.decode(payload)
 	default: // Unsupported MQTT packet type
 		return nil
 	}
