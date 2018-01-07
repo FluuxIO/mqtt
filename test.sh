@@ -11,4 +11,7 @@ for d in $(go list ./... | grep -v vendor); do
     fi
 done
 
-./codecov.sh
+if [ -f "./codecov.sh" ]; then
+   ./codecov.sh
+fi
+
