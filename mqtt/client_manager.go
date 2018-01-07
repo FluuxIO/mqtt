@@ -4,7 +4,7 @@ import "log"
 
 // postConnect function, if defined, is executed right after connection
 // success (CONNACK).
-type postConnect func(c *Client) // TODO Should not take an MQTT client, but an io.Writer
+type postConnect func(c *Client) // TODO Should we not take an MQTT client, but an io.Writer ?
 
 // ClientManager supervises an MQTT client connection. Its role is to handle connection events and
 // apply reconnection strategy.
