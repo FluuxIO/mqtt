@@ -305,7 +305,7 @@ func (publishDecoder) decode(fixedHeaderFlags int, payload []byte) PublishPacket
 	var publish PublishPacket
 
 	publish.Dup = int2bool(fixedHeaderFlags >> 3)
-	publish.Qos = int((fixedHeaderFlags & 6) >> 1)
+	publish.Qos = (fixedHeaderFlags & 6) >> 1
 	publish.Retain = int2bool(fixedHeaderFlags & 1)
 	var rest []byte
 	publish.Topic, rest = extractNextString(payload)
@@ -407,7 +407,7 @@ func (subscribe SubscribePacket) Marshall() []byte {
 	for _, topic := range subscribe.Topics {
 		nextPos = copyBufferString(buf, nextPos, topic.Name)
 		buf[nextPos] = byte(topic.QOS)
-		nextPos += 1
+		nextPos++
 	}
 
 	return buf
@@ -468,7 +468,7 @@ func (suback SubAckPacket) Marshall() []byte {
 	nextPos := 4
 	for _, rc := range suback.ReturnCodes {
 		buf[nextPos] = byte(rc)
-		nextPos += 1
+		nextPos++
 	}
 
 	return buf
