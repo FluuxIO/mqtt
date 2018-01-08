@@ -1,4 +1,4 @@
-package mqtt // import "fluux.io/gomqtt/mqtt"
+package mqtt // import "fluux.io/mqtt"
 
 import "time"
 

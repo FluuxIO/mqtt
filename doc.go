@@ -5,4 +5,4 @@ You can use the MQTT client directly at the low-level and handle connection even
 If you want to have sane default behaviour for handling reconnect, you can directly rely on the connection manager
 struct.
 */
-package mqtt // import "fluux.io/gomqtt/mqtt"
+package mqtt // import "fluux.io/mqtt"

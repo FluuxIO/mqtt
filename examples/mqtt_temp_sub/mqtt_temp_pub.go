@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"fluux.io/gomqtt/mqtt"
+	"fluux.io/mqtt"
 )
 
 func main() {

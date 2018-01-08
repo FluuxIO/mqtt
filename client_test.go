@@ -1,4 +1,4 @@
-package mqtt_test // import "fluux.io/gomqtt/mqtt"
+package mqtt_test // import "fluux.io/mqtt"
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"fluux.io/gomqtt/mqtt"
+	"fluux.io/mqtt"
 )
 
 const (
