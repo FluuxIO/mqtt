@@ -18,9 +18,11 @@
 + Support persistent session option
 + Use new Marshaller: Preallocate buffer of correct size in marshallers to improve performance (+buffer write can return errors).
 + Rename PDU to a name more in line with MQTT specification.
++ Address go vet + various other linter
 
 ## TODO
 
+- errcheck: check that all required errors are handled properly (errcheck)
 - TLS support: Use URL scheme to define connection to server: tcp:// tls://
 - Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages

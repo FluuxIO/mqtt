@@ -3,3 +3,6 @@
   - name: test
     service: build
     command: ./test.sh
+  - name: vet
+    service: build
+    command: go vet

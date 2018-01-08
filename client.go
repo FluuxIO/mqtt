@@ -247,8 +247,8 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 
 func (c *Client) send(packet Marshaller) {
 	buf := packet.Marshall()
-	sender := c.getSender()
-	sender.send(buf)
+	out := c.getSender()
+	out.send(buf)
 }
 
 // ============================================================================

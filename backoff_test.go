@@ -11,7 +11,7 @@ func TestDurationForAttempt_NoJitter(t *testing.T) {
 	if b.DurationForAttempt(0) != bInMS {
 		t.Errorf("incorrect default duration for attempt #0 (%d) = %d", b.DurationForAttempt(0)/time.Millisecond, bInMS/time.Millisecond)
 	}
-	var prevDuration, d time.Duration = 0, 0
+	var prevDuration, d time.Duration
 	for i := 0; i < 10; i++ {
 		d = b.DurationForAttempt(i)
 		if !(d >= prevDuration) {

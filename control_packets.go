@@ -168,7 +168,7 @@ func (connectDecoder) decode(payload []byte) ConnectPacket {
 		connect.Username, payload = extractNextString(payload)
 	}
 	if passwordFlag {
-		connect.Password, payload = extractNextString(payload)
+		connect.Password, _ = extractNextString(payload)
 	}
 
 	return connect
