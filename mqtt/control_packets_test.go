@@ -12,7 +12,7 @@ import (
 
 // TODO: Test incorrect will QOS
 func TestIncrementalConnectFlag(t *testing.T) {
-	c := PDUConnect{}
+	c := ConnectPacket{}
 	assertConnectFlagValue(t, "incorrect connect flag: default connect flag should be empty (%d)", c.connectFlag(), 0)
 
 	c.CleanSession = true
@@ -37,8 +37,8 @@ func TestIncrementalConnectFlag(t *testing.T) {
 	assertConnectFlagValue(t, "incorrect connect flag: passwordFlag is not properly set (%d)", c.connectFlag(), 246)
 }
 
-func getConnect() PDUConnect {
-	connect := PDUConnect{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
+func getConnect() ConnectPacket {
+	connect := ConnectPacket{ProtocolLevel: ProtocolLevel, ProtocolName: ProtocolName}
 	connect.CleanSession = true
 	connect.WillFlag = true
 	connect.WillQOS = 1
@@ -61,7 +61,7 @@ func TestConnectDecode(t *testing.T) {
 		t.Errorf("cannot decode connect packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case PDUConnect:
+		case ConnectPacket:
 			if p != connect {
 				t.Errorf("unmarshalled connect does not match original (%+v) = %+v", p, connect)
 			}
@@ -95,7 +95,7 @@ func assertConnectFlagValue(t *testing.T, message string, flag int, expected int
 
 func TestConnAckEncodeDecode(t *testing.T) {
 	returnCode := 1
-	ca := &PDUConnAck{}
+	ca := &ConnAckPacket{}
 	ca.ReturnCode = returnCode
 	buf := ca.Marshall()
 
@@ -104,7 +104,7 @@ func TestConnAckEncodeDecode(t *testing.T) {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
-		case PDUConnAck:
+		case ConnAckPacket:
 			if p.ReturnCode != returnCode {
 				t.Errorf("incorrect result code (%d) = %d", p.ReturnCode, returnCode)
 			}
@@ -119,7 +119,7 @@ func TestConnAckEncodeDecode(t *testing.T) {
 // ============================================================================
 
 func TestDisconnect(t *testing.T) {
-	disconnect := PDUDisconnect{}
+	disconnect := DisconnectPacket{}
 	buf := disconnect.Marshall()
 
 	reader := bytes.NewReader(buf)
@@ -127,7 +127,7 @@ func TestDisconnect(t *testing.T) {
 		t.Error("cannot decode disconnect control packet")
 	} else {
 		switch packet.(type) {
-		case PDUDisconnect:
+		case DisconnectPacket:
 		default:
 			t.Error("Incorrect packet type for disconnect")
 		}
@@ -139,7 +139,7 @@ func TestDisconnect(t *testing.T) {
 // ============================================================================
 
 func TestPublishDecode(t *testing.T) {
-	publish := PDUPublish{}
+	publish := PublishPacket{}
 	publish.ID = 1
 	publish.Dup = false
 	publish.Qos = 1
@@ -153,7 +153,7 @@ func TestPublishDecode(t *testing.T) {
 		t.Errorf("cannot decode publish packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case PDUPublish:
+		case PublishPacket:
 			if p.Dup != publish.Dup {
 				t.Errorf("incorrect dup flag (%t) = %t", p.Dup, publish.Dup)
 			}
@@ -185,7 +185,7 @@ func TestPublishDecode(t *testing.T) {
 
 func TestPubAckEncodeDecode(t *testing.T) {
 	id := 1500
-	pa := &PDUPubAck{}
+	pa := &PubAckPacket{}
 	pa.ID = id
 	buf := pa.Marshall()
 
@@ -194,7 +194,7 @@ func TestPubAckEncodeDecode(t *testing.T) {
 		t.Error("cannot decode puback control packet")
 	} else {
 		switch p := packet.(type) {
-		case PDUPubAck:
+		case PubAckPacket:
 			if p.ID != id {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, id)
 			}
@@ -210,7 +210,7 @@ func TestPubAckEncodeDecode(t *testing.T) {
 // ============================================================================
 
 func TestSubscribeDecode(t *testing.T) {
-	subscribe := PDUSubscribe{}
+	subscribe := SubscribePacket{}
 	subscribe.ID = 2
 
 	t1 := Topic{Name: "test/topic", QOS: 0}
@@ -225,7 +225,7 @@ func TestSubscribeDecode(t *testing.T) {
 		t.Errorf("cannot decode subscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case PDUSubscribe:
+		case SubscribePacket:
 			if p.ID != subscribe.ID {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, subscribe.ID)
 			}
@@ -257,7 +257,7 @@ func TestSubscribeDecode(t *testing.T) {
 
 func TestSubAckEncodeDecode(t *testing.T) {
 	id := 1500
-	sa := &PDUSubAck{}
+	sa := &SubAckPacket{}
 	sa.ID = id
 	sa.ReturnCodes = []int{0x00, 0x01, 0x02, 0x80}
 	buf := sa.Marshall()
@@ -267,7 +267,7 @@ func TestSubAckEncodeDecode(t *testing.T) {
 		t.Error("cannot decode connack control packet")
 	} else {
 		switch p := packet.(type) {
-		case PDUSubAck:
+		case SubAckPacket:
 			if p.ID != sa.ID {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, sa.ID)
 			}
@@ -289,7 +289,7 @@ func TestSubAckEncodeDecode(t *testing.T) {
 // ============================================================================
 
 func TestUnsubscribeDecode(t *testing.T) {
-	unsub := PDUUnsubscribe{}
+	unsub := UnsubscribePacket{}
 	unsub.ID = 2000
 
 	t1 := "test/topic"
@@ -304,7 +304,7 @@ func TestUnsubscribeDecode(t *testing.T) {
 		t.Errorf("cannot decode unsubscribe packet: %q", err)
 	} else {
 		switch p := packet.(type) {
-		case PDUUnsubscribe:
+		case UnsubscribePacket:
 			if p.ID != unsub.ID {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, unsub.ID)
 			}
@@ -332,7 +332,7 @@ func TestUnsubscribeDecode(t *testing.T) {
 
 func TestUnsubAckEncodeDecode(t *testing.T) {
 	id := 1000
-	ua := &PDUUnsubAck{}
+	ua := &UnsubAckPacket{}
 	ua.ID = id
 	buf := ua.Marshall()
 
@@ -341,7 +341,7 @@ func TestUnsubAckEncodeDecode(t *testing.T) {
 		t.Error("cannot decode unsuback control packet")
 	} else {
 		switch p := packet.(type) {
-		case PDUUnsubAck:
+		case UnsubAckPacket:
 			if p.ID != ua.ID {
 				t.Errorf("incorrect packet id (%d) = %d", p.ID, ua.ID)
 			}
@@ -357,7 +357,7 @@ func TestUnsubAckEncodeDecode(t *testing.T) {
 // ============================================================================
 
 func TestPingReq(t *testing.T) {
-	pingReq := PDUPingReq{}
+	pingReq := PingReqPacket{}
 	buf := pingReq.Marshall()
 
 	reader := bytes.NewReader(buf)
@@ -365,7 +365,7 @@ func TestPingReq(t *testing.T) {
 		t.Error("cannot decode pingreq control packet")
 	} else {
 		switch packet.(type) {
-		case PDUPingReq:
+		case PingReqPacket:
 
 		default:
 			t.Error("Incorrect packet type for pingreq")
@@ -379,7 +379,7 @@ func TestPingReq(t *testing.T) {
 // ============================================================================
 
 func TestPingResp(t *testing.T) {
-	pingResp := PDUPingResp{}
+	pingResp := PingRespPacket{}
 	buf := pingResp.Marshall()
 
 	reader := bytes.NewReader(buf)
@@ -387,7 +387,7 @@ func TestPingResp(t *testing.T) {
 		t.Error("cannot decode pingresp control packet")
 	} else {
 		switch p := packet.(type) {
-		case PDUPingResp:
+		case PingRespPacket:
 
 		default:
 			t.Error("Incorrect packet type for pingresp: ", reflect.TypeOf(p).Elem())

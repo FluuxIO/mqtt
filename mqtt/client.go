@@ -143,7 +143,7 @@ func (c *Client) Connect(defaultMsgChannel chan<- Message) error {
 // Disconnect sends DISCONNECT MQTT packet to other party and clean up
 // the client state.
 func (c *Client) Disconnect() {
-	packet := PDUDisconnect{}
+	packet := DisconnectPacket{}
 	c.send(&packet)
 	c.sender.quit <- struct{}{}
 
@@ -159,14 +159,14 @@ func (c *Client) Disconnect() {
 // Subscribe sends SUBSCRIBE MQTT control packet.  At the moment
 // suscribe are not kept in client state and are lost on reconnection.
 func (c *Client) Subscribe(topic Topic) {
-	subscribe := PDUSubscribe{}
+	subscribe := SubscribePacket{}
 	subscribe.Topics = append(subscribe.Topics, topic)
 	c.send(&subscribe)
 }
 
 // Unsubscribe sends UNSUBSCRIBE MQTT control packet.
 func (c *Client) Unsubscribe(topic string) {
-	unsubscribe := PDUUnsubscribe{}
+	unsubscribe := UnsubscribePacket{}
 	unsubscribe.Topics = append(unsubscribe.Topics, topic)
 	c.send(&unsubscribe)
 }
@@ -175,7 +175,7 @@ func (c *Client) Unsubscribe(topic string) {
 
 // Publish sends PUBLISH MQTT control packet.
 func (c *Client) Publish(topic string, payload []byte) {
-	publish := PDUPublish{}
+	publish := PublishPacket{}
 	publish.Topic = topic
 	publish.Payload = payload
 	c.send(&publish)
@@ -192,7 +192,7 @@ func (c *Client) connect() error {
 
 	// 1. Open session - Login
 	// Send connect packet
-	connectPacket := PDUConnect{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
+	connectPacket := ConnectPacket{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
 	connectPacket.Keepalive = c.Keepalive
 	connectPacket.ClientID = c.ClientID
 	connectPacket.CleanSession = c.CleanSession
@@ -206,7 +206,7 @@ func (c *Client) connect() error {
 	}
 
 	switch p := connack.(type) {
-	case PDUConnAck:
+	case ConnAckPacket:
 		switch p.ReturnCode {
 		case ConnAccepted:
 		default:

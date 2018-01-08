@@ -26,7 +26,7 @@ func initSender(conn net.Conn, keepalive int) sender {
 	var keepaliveCtl chan int
 	if keepalive > 0 {
 		keepaliveCtl = startKeepalive(keepalive, func() {
-			pingReq := PDUPingReq{}
+			pingReq := PingReqPacket{}
 			buf := pingReq.Marshall()
 			conn.Write(buf)
 		})
