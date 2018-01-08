@@ -218,8 +218,5 @@ func bool2int(b bool) int {
 }
 
 func int2bool(i int) bool {
-	if i == 1 {
-		return true
-	}
-	return false
+	return i == 1
 }
