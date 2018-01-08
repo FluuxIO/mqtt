@@ -17,23 +17,23 @@
 + Handle teardown & reconnect from either sender or receiver.
 + Support persistent session option
 + Use new Marshaller: Preallocate buffer of correct size in marshallers to improve performance (+buffer write can return errors).
++ Rename PDU to a name more in line with MQTT specification.
 
 ## TODO
 
-- Rename PDU to a name more in line with MQTT specification.
+- TLS support: Use URL scheme to define connection to server: tcp:// tls://
 - Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages
+- We need to setup subscriptions after background reconnect if there was not persistent session
 - Manage Packet ID during session.
 - Implement store interface and backend to ensure no message loss in client.
-- We need to setup subscriptions after background reconnect if there was not persistent session
-- Use URL scheme to define connection to server: tcp:// tls://
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
 - Support timeout on PingResp to trigger reconnect
 - Support subscription based on callbacks or on channels
 - QOS 1 and 2
-- TLS
 - Authentication with username, password. They can be place in URL scheme. tcp://username:password@server 
 - Certificate based authentication
 - More unit tests
 - Example of publish / subscribe sharing Go structures with encoding/gob (RPC like)
 - Support command-line option for examples (to pass server, port, username, ...)
+- Support for MQTT-SN spec ? http://mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf
