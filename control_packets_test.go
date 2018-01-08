@@ -169,7 +169,7 @@ func TestPublishDecode(t *testing.T) {
 			if p.ID != publish.ID {
 				t.Errorf("incorrect id (%d) = %d", p.ID, publish.ID)
 			}
-			if bytes.Compare(p.Payload, publish.Payload) != 0 {
+			if !bytes.Equal(p.Payload, publish.Payload) {
 				t.Errorf("incorrect payload (%q) = %q", p.Payload, publish.Payload)
 			}
 

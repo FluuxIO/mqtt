@@ -3,7 +3,6 @@ package mqtt // import "fluux.io/mqtt"
 import (
 	"io"
 	"log"
-	"net"
 )
 
 // Receiver actually need:
@@ -12,14 +11,14 @@ import (
 // - Error send channel to trigger teardown
 // - MessageSendChannel to dispatch messages to client
 
-func initReceiver(conn net.Conn, messageChannel chan<- Message, s sender) <-chan struct{} {
+func initReceiver(conn io.Reader, messageChannel chan<- Message, s sender) <-chan struct{} {
 	tearDown := make(chan struct{})
 	go receiver(conn, tearDown, messageChannel, s)
 	return tearDown
 }
 
 // Receive, decode and dispatch messages to the message channel
-func receiver(conn net.Conn, tearDown chan<- struct{}, message chan<- Message, s sender) {
+func receiver(conn io.Reader, tearDown chan<- struct{}, message chan<- Message, s sender) {
 	var p Marshaller
 	var err error
 

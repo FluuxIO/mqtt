@@ -1,6 +1,7 @@
 package mqtt // import "fluux.io/mqtt"
 
 import (
+	"io"
 	"net"
 )
 
@@ -37,7 +38,7 @@ func initSender(conn net.Conn, keepalive int) sender {
 	return s
 }
 
-func senderLoop(conn net.Conn, keepaliveCtl chan int, out <-chan []byte, quit <-chan struct{}, tearDown chan<- struct{}) {
+func senderLoop(conn io.WriteCloser, keepaliveCtl chan int, out <-chan []byte, quit <-chan struct{}, tearDown chan<- struct{}) {
 Loop:
 	for {
 		select {
@@ -57,7 +58,7 @@ func (s sender) send(buf []byte) {
 }
 
 // clean-up:
-func terminateSender(conn net.Conn, keepaliveCtl chan int) {
+func terminateSender(conn io.Closer, keepaliveCtl chan int) {
 	keepaliveSignal(keepaliveCtl, keepaliveStop)
 	conn.Close()
 }
