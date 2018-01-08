@@ -41,7 +41,7 @@ const (
 	fixedHeaderFlags = 0
 	ProtocolName     = "MQTT"
 	ProtocolLevel    = 4 // This is MQTT v3.1.1
-	DefaultClientID  = "GoMQTT"
+	DefaultClientID  = "Fluux-MQTT"
 )
 
 // =============================================================================
