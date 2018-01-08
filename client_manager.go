@@ -9,7 +9,7 @@ type postConnect func(c *Client) // TODO Should we not take an MQTT client, but 
 // ClientManager supervises an MQTT client connection. Its role is to handle connection events and
 // apply reconnection strategy.
 type ClientManager struct {
-	client      Client
+	client      *Client
 	PostConnect postConnect
 	// TODO Handler func to rebroadcast MQTT event
 	// Handler     mqtt.EventHandler
@@ -20,13 +20,13 @@ type ClientManager struct {
 // based on ClientManager configuration.
 func NewClientManager(client *Client, pc postConnect) *ClientManager {
 	return &ClientManager{
-		client:      *client,
+		client:      client,
 		PostConnect: pc,
 	}
 }
 
 // Start launch the connection loop
-func (cm ClientManager) Start() error {
+func (cm *ClientManager) Start() error {
 	// TODO Fix me: Ensure we do not override existing handler by supporting a list of handlers.
 	cm.client.Handler = func(e Event) {
 		if e.State == StateDisconnected {
@@ -38,12 +38,12 @@ func (cm ClientManager) Start() error {
 }
 
 // Stop cancels pending operations and terminates existing MQTT client.
-func (cm ClientManager) Stop() {
+func (cm *ClientManager) Stop() {
 	// TODO
 }
 
-// connect manage the reconnection loop and apply the define backoff to avoid overloading the server.
-func (cm ClientManager) connect(msgs chan<- Message) error {
+// connect manages the reconnection loop and apply the define backoff to avoid overloading the server.
+func (cm *ClientManager) connect(msgs chan<- Message) error {
 	var backoff Backoff // TODO Probably group backoff calculation features with connection manager.
 
 	for {
@@ -56,7 +56,7 @@ func (cm ClientManager) connect(msgs chan<- Message) error {
 	}
 
 	if cm.PostConnect != nil {
-		cm.PostConnect(&cm.client)
+		cm.PostConnect(cm.client)
 	}
 
 	return nil
