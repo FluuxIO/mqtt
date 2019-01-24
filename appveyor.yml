@@ -1,6 +1,6 @@
 version: "{build}"
 
-clone_folder: c:\gopath\src\fluux.io\mqtt
+clone_folder: c:\gopath\src\gosrc.io\mqtt
 
 platform: x64
 
@@ -11,6 +11,9 @@ branches:
 environment:
     GOPATH: c:\gopath
 
+init:
+    - git config --global core.autocrlf input
+
 install:
     - echo %PATH%
     - echo %GOPATH%
@@ -18,5 +21,8 @@ install:
     - go version
     - go env
 
-build_script:
-    - go test -v -cover ./...
+build: false
+deploy: false
+
+test_script:
+    - go test -v ./...
