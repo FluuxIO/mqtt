@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"fluux.io/mqtt"
+	"gosrc.io/mqtt"
 )
 
 func main() {

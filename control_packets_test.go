@@ -1,4 +1,4 @@
-package mqtt // import "fluux.io/mqtt"
+package mqtt // import "gosrc.io/mqtt"
 
 import (
 	"bytes"

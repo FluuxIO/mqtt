@@ -7,7 +7,7 @@ package main
 import (
 	"log"
 
-	"fluux.io/mqtt"
+	"gosrc.io/mqtt"
 )
 
 func main() {
