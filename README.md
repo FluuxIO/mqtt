@@ -1,6 +1,6 @@
 # Native Go MQTT Library
 
-[![Codeship Status for FluuxIO/mqtt](https://app.codeship.com/projects/75c09d70-d43d-0135-b59a-12b6e6b26eee/status?branch=master)](https://app.codeship.com/projects/262977) [![Build status](https://ci.appveyor.com/api/projects/status/x5w50atq44hbxy4y?svg=true)](https://ci.appveyor.com/project/mremond/mqtt)
+[![Codeship Status for FluuxIO/mqtt](https://app.codeship.com/projects/75c09d70-d43d-0135-b59a-12b6e6b26eee/status?branch=master)](https://app.codeship.com/projects/262977)
 [![GoDoc](https://godoc.org/fluux.io/mqtt?status.svg)](https://godoc.org/fluux.io/mqtt) [![GoReportCard](https://goreportcard.com/badge/fluux.io/mqtt)](https://goreportcard.com/report/fluux.io/mqtt) [![codecov](https://codecov.io/gh/FluuxIO/mqtt/branch/master/graph/badge.svg)](https://codecov.io/gh/FluuxIO/mqtt)
 
 Fluux MQTT is a MQTT v3.1.1 client library written in Go.
