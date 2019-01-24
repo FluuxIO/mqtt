@@ -11,6 +11,9 @@ branches:
 environment:
     GOPATH: c:\gopath
 
+init:
+    - git config --global core.autocrlf input
+
 install:
     - echo %PATH%
     - echo %GOPATH%
@@ -18,5 +21,8 @@ install:
     - go version
     - go env
 
-build_script:
+build: false
+deploy: false
+
+test_script:
     - go test -v -cover ./...
