@@ -1,6 +1,6 @@
 version: "{build}"
 
-clone_folder: c:\gopath\src\fluux.io\mqtt
+clone_folder: c:\gopath\src\gosrc.io\mqtt
 
 platform: x64
 
