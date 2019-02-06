@@ -284,7 +284,12 @@ func (publish PublishPacket) Marshall() []byte {
 
 	// Packet ID
 	if publish.Qos == 1 || publish.Qos == 2 {
-		binary.BigEndian.PutUint16(buf[nextPos:nextPos+2], uint16(publish.ID))
+		// Packet ID (it must be non zero, so we use 1 if value is zero to generate a valid packet)
+		id := 1
+		if publish.ID > id {
+			id = publish.ID
+		}
+		binary.BigEndian.PutUint16(buf[nextPos:nextPos+2], uint16(id))
 		nextPos = nextPos + 2
 	}
 
@@ -399,8 +404,12 @@ func (subscribe SubscribePacket) Marshall() []byte {
 	buf[0] = byte(subscribeType<<4 | fixedHeaderFlags)
 	buf[1] = byte(subscribe.PayloadSize())
 
-	// Packet ID
-	binary.BigEndian.PutUint16(buf[2:4], uint16(subscribe.ID))
+	// Packet ID (it must be non zero, so we use 1 if value is zero to generate a valid packet)
+	id := 1
+	if subscribe.ID > id {
+		id = subscribe.ID
+	}
+	binary.BigEndian.PutUint16(buf[2:4], uint16(id))
 
 	// Topic filters
 	nextPos := 4
@@ -527,8 +536,12 @@ func (unsubscribe UnsubscribePacket) Marshall() []byte {
 	buf[0] = byte(unsubscribeType<<4 | fixedHeaderFlags)
 	buf[1] = byte(unsubscribe.PayloadSize())
 
-	// Packet ID
-	binary.BigEndian.PutUint16(buf[2:4], uint16(unsubscribe.ID))
+	// Packet ID (it must be non zero, so we use 1 if value is zero to generate a valid packet)
+	id := 1
+	if unsubscribe.ID > id {
+		id = unsubscribe.ID
+	}
+	binary.BigEndian.PutUint16(buf[2:4], uint16(id))
 
 	// Topics name
 	nextPos := 4

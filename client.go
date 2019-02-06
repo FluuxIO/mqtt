@@ -93,8 +93,9 @@ type Client struct {
 	Handler  EventHandler
 	Messages chan<- Message
 
-	mu     sync.RWMutex
-	sender sender
+	mu       sync.RWMutex
+	sender   sender
+	packetID int
 }
 
 // New generates a new MQTT client with default parameters. Address
@@ -115,6 +116,7 @@ func New(address string) *Client {
 				ConnectTimeout: 30 * time.Second,
 			},
 		},
+		packetID: 1, // Start packet id at 1, not 0
 	}
 }
 
@@ -161,14 +163,16 @@ func (c *Client) Disconnect() {
 // Subscribe sends SUBSCRIBE MQTT control packet.  At the moment
 // subscription state is not kept in client state and are lost on reconnection.
 func (c *Client) Subscribe(topic Topic) {
-	subscribe := SubscribePacket{}
+	c.packetID++
+	subscribe := SubscribePacket{ID: c.packetID}
 	subscribe.Topics = append(subscribe.Topics, topic)
 	c.send(&subscribe)
 }
 
 // Unsubscribe sends UNSUBSCRIBE MQTT control packet.
 func (c *Client) Unsubscribe(topic string) {
-	unsubscribe := UnsubscribePacket{}
+	c.packetID++
+	unsubscribe := UnsubscribePacket{ID: c.packetID}
 	unsubscribe.Topics = append(unsubscribe.Topics, topic)
 	c.send(&unsubscribe)
 }
@@ -177,7 +181,8 @@ func (c *Client) Unsubscribe(topic string) {
 
 // Publish sends PUBLISH MQTT control packet.
 func (c *Client) Publish(topic string, payload []byte) {
-	publish := PublishPacket{}
+	c.packetID++
+	publish := PublishPacket{ID: c.packetID}
 	publish.Topic = topic
 	publish.Payload = payload
 	c.send(&publish)

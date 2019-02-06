@@ -179,6 +179,30 @@ func TestPublishDecode(t *testing.T) {
 	}
 }
 
+// Packet id on publish cannot be zero if QOS > 0, if we let the default value, it will be set to 1 on Marshall.
+// [MQTT-2.3.1-1]
+func TestPublishZeroID(t *testing.T) {
+	publish := PublishPacket{}
+	publish.Topic = "test/1"
+	publish.Qos = 1
+	publish.Payload = []byte("Hi")
+	buf := publish.Marshall()
+
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Errorf("cannot decode publish packet: %q", err)
+	} else {
+		switch p := packet.(type) {
+		case PublishPacket:
+			if p.ID == 0 {
+				t.Errorf("incorrect packet id (%d) = %d", p.ID, 1)
+			}
+		default:
+			t.Error("Incorrect packet type for publish")
+		}
+	}
+}
+
 // ============================================================================
 // PUBACK
 // ============================================================================
@@ -245,6 +269,29 @@ func TestSubscribeDecode(t *testing.T) {
 				t.Errorf("incorrect topic qos (%q) = %q", parsedt2.QOS, t2.QOS)
 			}
 
+		default:
+			t.Error("Incorrect packet type for subscribe")
+		}
+	}
+}
+
+// Packet id on subscribe cannot be zero, if we let the default value, it will be set to 1 on Marshall.
+// [MQTT-2.3.1-1]
+func TestSubscribeZeroID(t *testing.T) {
+	subscribe := SubscribePacket{}
+	t1 := Topic{Name: "test/*", QOS: 0}
+	subscribe.Topics = append(subscribe.Topics, t1)
+	buf := subscribe.Marshall()
+
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Errorf("cannot decode subscribe packet: %q", err)
+	} else {
+		switch p := packet.(type) {
+		case SubscribePacket:
+			if p.ID == 0 {
+				t.Errorf("incorrect packet id (%d) = %d", p.ID, 1)
+			}
 		default:
 			t.Error("Incorrect packet type for subscribe")
 		}
@@ -320,6 +367,29 @@ func TestUnsubscribeDecode(t *testing.T) {
 				t.Errorf("incorrect topic name (%q) = %q", parsedt2, t2)
 			}
 
+		default:
+			t.Error("Incorrect packet type for unsubscribe")
+		}
+	}
+}
+
+// Packet id on unsubscribe cannot be zero, if we let the default value, it will be set to 1 on Marshall.
+// [MQTT-2.3.1-1]
+func TestUnsubscribeZeroID(t *testing.T) {
+	unsub := UnsubscribePacket{}
+	t1 := "test/topic"
+	unsub.Topics = append(unsub.Topics, t1)
+	buf := unsub.Marshall()
+
+	reader := bytes.NewReader(buf)
+	if packet, err := PacketRead(reader); err != nil {
+		t.Errorf("cannot decode unsubscribe packet: %q", err)
+	} else {
+		switch p := packet.(type) {
+		case UnsubscribePacket:
+			if p.ID == 0 {
+				t.Errorf("incorrect packet id (%d) = %d", p.ID, 1)
+			}
 		default:
 			t.Error("Incorrect packet type for unsubscribe")
 		}
