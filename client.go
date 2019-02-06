@@ -197,9 +197,13 @@ func (c *Client) connect() error {
 	connectPacket.ClientID = c.ClientID
 	connectPacket.CleanSession = c.CleanSession
 	buf := connectPacket.Marshall()
-	conn.Write(buf)
+	if _, err := conn.Write(buf); err != nil {
+		return err
+	}
 
-	conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout))
+	if err = conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout)); err != nil {
+		return err
+	}
 	var connack Marshaller
 	if connack, err = PacketRead(conn); err != nil {
 		return err
