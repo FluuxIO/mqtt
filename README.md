@@ -8,6 +8,8 @@ Fluux MQTT is a MQTT v3.1.1 client library written in Go.
 The library has been tested with the following MQTT servers:
 
 - Mosquitto
+- [ejabberd](https://www.process-one.net/en/ejabberd/)
+- [fluux.io platform](https://fluux.io/)
 
 ## Short term tasks
 
