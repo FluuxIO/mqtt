@@ -29,6 +29,8 @@ type OptConnect struct {
 	ClientID      string
 	Keepalive     int // TODO Keepalive should also probably be a time.Duration for more flexibility
 	CleanSession  bool
+	Username      string
+	Password      string
 }
 
 // OptTCP defines TCP/IP related parameters. They are used to
@@ -157,7 +159,7 @@ func (c *Client) Disconnect() {
 // ============================================================================
 
 // Subscribe sends SUBSCRIBE MQTT control packet.  At the moment
-// suscribe are not kept in client state and are lost on reconnection.
+// subscription state is not kept in client state and are lost on reconnection.
 func (c *Client) Subscribe(topic Topic) {
 	subscribe := SubscribePacket{}
 	subscribe.Topics = append(subscribe.Topics, topic)
@@ -196,6 +198,8 @@ func (c *Client) connect() error {
 	connectPacket.Keepalive = c.Keepalive
 	connectPacket.ClientID = c.ClientID
 	connectPacket.CleanSession = c.CleanSession
+	connectPacket.Username = c.Username
+	connectPacket.Password = c.Password
 	buf := connectPacket.Marshall()
 	if _, err := conn.Write(buf); err != nil {
 		return err
@@ -220,7 +224,9 @@ func (c *Client) connect() error {
 		return ErrIncorrectConnectResponse
 	}
 
-	conn.SetReadDeadline(time.Time{})
+	if err = conn.SetReadDeadline(time.Time{}); err != nil {
+		return err
+	}
 
 	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
