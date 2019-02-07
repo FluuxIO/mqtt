@@ -60,7 +60,7 @@ func (s sender) send(buf []byte) {
 // clean-up:
 func terminateSender(conn io.Closer, keepaliveCtl chan int) {
 	keepaliveSignal(keepaliveCtl, keepaliveStop)
-	conn.Close()
+	_ = conn.Close()
 }
 
 // keepaliveSignal sends keepalive commands on keepalive channel (if
