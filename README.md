@@ -19,11 +19,15 @@ Implement support for QOS 1 and 2 (with storage backend interface and default ba
 
 You can launch unit tests with:
 
-    go test ./mqtt/...
+    go test ./...
+
+## Testing with Fluux public MQTT server
+
+We encourage you to experiment and test on a public Fluux test server. It is available on mqtt.fluux.io (on ports 1883 for cleartext and 8883 for TLS).
 
 ## Setting Mosquitto on OSX for testing
 
-Client library is currently being tested with Mosquitto.
+If you want to test Go MQTT library locally, you can install Mosquitto.
 
 Mosquitto can be installed from homebrew:
 
