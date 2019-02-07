@@ -17,7 +17,7 @@ import (
 
 func main() {
 	messages := make(chan mqtt.Message)
-	client := mqtt.New("localhost:1883")
+	client := mqtt.NewClient("localhost:1883")
 	client.ClientID = "MQTT-Pub"
 	fmt.Printf("Server to connect to: %s\n", client.Address)
 

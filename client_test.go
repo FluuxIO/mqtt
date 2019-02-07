@@ -21,7 +21,7 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	mock.Start(t, func(t *testing.T, c net.Conn) { return })
 
 	// Test / Check result
-	client := mqtt.New(testMQTTAddress)
+	client := mqtt.NewClient(testMQTTAddress)
 	client.ConnectTimeout = 100 * time.Millisecond
 
 	if err := client.Connect(nil); err != nil {
@@ -40,7 +40,7 @@ func TestClient_Connect(t *testing.T) {
 	mock.Start(t, handlerConnackSuccess)
 
 	// Test / Check result
-	client := mqtt.New(testMQTTAddress)
+	client := mqtt.NewClient(testMQTTAddress)
 	client.ConnectTimeout = 30 * time.Second
 	if err := client.Connect(nil); err != nil {
 		t.Errorf("MQTT connection failed: %s", err)
@@ -56,7 +56,7 @@ func TestClient_Unauthorized(t *testing.T) {
 	mock.Start(t, handlerUnauthorized)
 
 	// Test / Check result
-	client := mqtt.New(testMQTTAddress)
+	client := mqtt.NewClient(testMQTTAddress)
 	client.ClientID = "testClientID"
 	if err := client.Connect(nil); err == nil {
 		t.Error("MQTT connection should have failed")
@@ -72,7 +72,7 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 	mock.Start(t, handlerConnackSuccess)
 
 	// Test / Check result
-	client := mqtt.New(testMQTTAddress)
+	client := mqtt.NewClient(testMQTTAddress)
 	client.Keepalive = 0
 	if err := client.Connect(nil); err != nil {
 		t.Error("MQTT connection failed")

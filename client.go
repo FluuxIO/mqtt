@@ -101,7 +101,7 @@ type Client struct {
 // New generates a new MQTT client with default parameters. Address
 // must be set as we cannot find relevant default value for server.
 // TODO: Should messages channel be set on New ?
-func New(address string) *Client {
+func NewClient(address string) *Client {
 	return &Client{
 		Config: Config{
 			Address: address,

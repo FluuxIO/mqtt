@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	client := mqtt.New("localhost:1883")
+	client := mqtt.NewClient("localhost:1883")
 	client.ClientID = "MQTT-Sub"
 	log.Printf("Server to connect to: %s\n", client.Address)
 
