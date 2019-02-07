@@ -56,6 +56,6 @@ func quitDebugHandler() {
 	signal.Notify(sigs, syscall.SIGQUIT)
 	for {
 		<-sigs
-		pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+		_ = pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
 	}
 }
