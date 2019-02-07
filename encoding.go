@@ -149,7 +149,9 @@ func readRemainingLength(r io.Reader) (int, error) {
 	var err error
 	encodedByte := make([]byte, 1)
 	for ok := true; ok; ok = encodedByte[0]&128 != 0 {
-		io.ReadFull(r, encodedByte)
+		if _, err := io.ReadFull(r, encodedByte); err != nil {
+			return 0, err
+		}
 		value += uint32(encodedByte[0]&127) * multiplier
 		multiplier *= 128
 		if multiplier > 128*128*128 {
