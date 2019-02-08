@@ -24,18 +24,20 @@
 ## TODO
 
 - Basic TLS support with username / password authentication
+- Add missing QOS 1 and 2 control packets.
 - QOS 1 and 2
 - Send queue to send changes that were not acked.
 - Internal library architecture diagram (with go routines and channels)
 - errcheck: check that all required errors are handled properly (errcheck)
 - TLS support: Use URL scheme to define connection to server: tcp:// tls://
 - Support timeout on PingResp to trigger reconnect
-- Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect.
+- Ability to set session as persistent. If session is persistent, there is no need to resubscribe on reconnect if server
+  say there were subscription (except inflight)
   See: http://www.hivemq.com/blog/mqtt-essentials-part-7-persistent-session-queuing-messages
 - We need to setup subscriptions after background reconnect if there was not persistent session
 - Implement store interface and backend to ensure no message loss in client.
 - Use context to clean data flow ? (https://www.youtube.com/watch?v=3EW1hZ8DVyw&list=PL2ntRZ1ySWBf-_z-gHCOR2N156Nw930Hm)
-- Support subscription based on callbacks or on channels
+- Support subscription based on callbacks as an addition to channels ? Is that really needed ?
 - Authentication with username, password. They can be place in URL scheme. tcp://username:password@server 
 - Certificate based authentication
 - More unit tests
