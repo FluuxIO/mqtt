@@ -422,6 +422,10 @@ func (subscribe SubscribePacket) Marshall() []byte {
 	return buf
 }
 
+func (subscribe SubscribePacket) PacketID() int {
+	return subscribe.ID
+}
+
 //==============================================================================
 
 type subscribeDecoder struct{}
@@ -483,6 +487,10 @@ func (suback SubAckPacket) Marshall() []byte {
 	return buf
 }
 
+func (suback SubAckPacket) ResponseID() int {
+	return suback.ID
+}
+
 //==============================================================================
 
 type subAckDecoder struct{}
@@ -493,8 +501,6 @@ var subAckPacket subAckDecoder
 // Client could read the current subscription state map to read the status of each subscription.
 // We should probably return error if a subscription is rejected or if
 // one of the QOS is lower than the level we asked for.
-//
-// TODO How to return all code backs to client using the library ?
 func (subAckDecoder) decode(payload []byte) SubAckPacket {
 	var suback SubAckPacket
 
@@ -552,6 +558,10 @@ func (unsubscribe UnsubscribePacket) Marshall() []byte {
 	return buf
 }
 
+func (unsubscribe UnsubscribePacket) PacketID() int {
+	return unsubscribe.ID
+}
+
 //==============================================================================
 
 type unsubscribeDecoder struct{}
@@ -601,6 +611,10 @@ func (unsub UnsubAckPacket) Marshall() []byte {
 	return buf
 }
 
+func (unsub UnsubAckPacket) ResponseID() int {
+	return unsub.ID
+}
+
 //==============================================================================
 
 type unsubAckDecoder struct{}
@@ -620,7 +634,7 @@ func (unsubAckDecoder) decode(payload []byte) UnsubAckPacket {
 // ============================================================================
 
 // PingReqPacket is the control packet sent from client for connection
-// keepalive. Client expects to receive a PingRespPacket
+////// keepalive. Client expects to receive a PingRespPacket
 type PingReqPacket struct{}
 
 // Marshall serializes a PINGREQ struct as an MQTT control packet.

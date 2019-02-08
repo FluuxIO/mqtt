@@ -1,7 +1,9 @@
 package mqtt // import "gosrc.io/mqtt"
 
+import "C"
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -84,6 +86,22 @@ type Event struct {
 type EventHandler func(Event)
 
 //=============================================================================
+// State management
+
+// Keep trakc on acknowledged subscriptions
+type Subscriptions map[string]int
+
+// Keeps track of inflight requests subscriptions, etc
+// State
+type inflight map[int]QOSOutPacket
+
+type qosState struct {
+	qosResponse   chan<- QOSResponse
+	Subscriptions Subscriptions
+	inflight      inflight
+}
+
+//=============================================================================
 
 // Client is the main structure use to connect as a client on an MQTT
 // server.
@@ -92,6 +110,8 @@ type Client struct {
 
 	Handler  EventHandler
 	Messages chan<- Message
+
+	qosState
 
 	mu       sync.RWMutex
 	sender   sender
@@ -116,7 +136,10 @@ func NewClient(address string) *Client {
 				ConnectTimeout: 30 * time.Second,
 			},
 		},
-		packetID: 1, // Start packet id at 1, not 0
+		qosState: qosState{
+			Subscriptions: make(Subscriptions),
+			inflight:      make(inflight),
+		},
 	}
 }
 
@@ -148,7 +171,7 @@ func (c *Client) Connect(defaultMsgChannel chan<- Message) error {
 // the client state.
 func (c *Client) Disconnect() {
 	packet := DisconnectPacket{}
-	c.send(&packet)
+	c.send(packet)
 	c.sender.quit <- struct{}{}
 
 	// Terminate client receive channel
@@ -166,7 +189,7 @@ func (c *Client) Subscribe(topic Topic) {
 	c.packetID++
 	subscribe := SubscribePacket{ID: c.packetID}
 	subscribe.Topics = append(subscribe.Topics, topic)
-	c.send(&subscribe)
+	c.send(subscribe)
 }
 
 // Unsubscribe sends UNSUBSCRIBE MQTT control packet.
@@ -174,7 +197,7 @@ func (c *Client) Unsubscribe(topic string) {
 	c.packetID++
 	unsubscribe := UnsubscribePacket{ID: c.packetID}
 	unsubscribe.Topics = append(unsubscribe.Topics, topic)
-	c.send(&unsubscribe)
+	c.send(unsubscribe)
 }
 
 // ============================================================================
@@ -185,7 +208,15 @@ func (c *Client) Publish(topic string, payload []byte) {
 	publish := PublishPacket{ID: c.packetID}
 	publish.Topic = topic
 	publish.Payload = payload
-	c.send(&publish)
+	c.send(publish)
+}
+
+// Format printable version of client state
+func (c *Client) String() string {
+	str := fmt.Sprintf(`
+Subscription: %v
+Inflight: %v`, c.Subscriptions, c.inflight)
+	return str
 }
 
 // ============================================================================
@@ -235,22 +266,32 @@ func (c *Client) connect() error {
 
 	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
-	tearDown := initReceiver(conn, c.Messages, c.sender)
-	// Routine to watch for disconnect signal and broadcast disconnect event to client callback
-	go c.disconnected(tearDown, c.sender.done, c.Messages)
+	receiverChannel := spawnReceiver(conn, c.Messages, c.sender)
+	// Routine to maintain client state based on event from receiver and sender (disconnect signal, QOS / Ack messages, etc)
+	go c.stateLoop(receiverChannel, c.sender.done, c.Messages)
 	return nil
 }
 
-// get receiver tearDown signal, clean client state and trigger reconnect
-func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan struct{}, messageChannel chan<- Message) {
-	select {
-	case <-receiverDone:
-		c.sender.quit <- struct{}{}
-	case <-senderDone:
-		// We do nothing for now: As the sender closes socket, this should
-		// be enough to have read Loop fail and properly shutdown process.
+// Go routine used to coordinates client state management loop.
+// Routine to maintain client state based on event from receiver and sender (disconnect signal, QOS / Ack messages, etc)
+// It updates the state of inflight messages, but also track disconnect event to shutdown properly.
+func (c *Client) stateLoop(receiverChannel <-chan QOSResponse, senderDone <-chan struct{}, messageChannel chan<- Message) {
+Loop:
+	for {
+		select {
+		case qosResponse, ok := <-receiverChannel:
+			if !ok { // Receiver terminated
+				c.sender.quit <- struct{}{}
+				break Loop
+			}
+			c.handleQOSResponse(qosResponse)
+		case <-senderDone:
+			// We do nothing for now: As the sender closes socket, this should
+			// be enough to have read Loop fail and properly shutdown process.
 
-		// TODO: Handle the case when the client is done ?
+			// TODO: Handle the case when the client is done ?
+			break Loop
+		}
 	}
 
 	if c.Handler != nil {
@@ -258,9 +299,58 @@ func (c *Client) disconnected(receiverDone <-chan struct{}, senderDone <-chan st
 	}
 }
 
+// QOS packets includes all packets that are acked (so this includes subscribe and unsubscribe).
+
+type QOSOutPacket interface {
+	PacketID() int
+}
+
+type QOSResponse interface {
+	ResponseID() int
+}
+
+// TODO: Refactor in smaller functions
+func (c *Client) handleQOSResponse(qosResponse QOSResponse) {
+	id := qosResponse.ResponseID()
+	if originalPacket, found := c.inflight[id]; found {
+		switch resp := qosResponse.(type) {
+		case SubAckPacket:
+			// Ack only contains the response code for each topic: We need to merge the result with the
+			// original subscription request.
+			if sub, ok := originalPacket.(SubscribePacket); ok {
+				for i, topic := range sub.Topics {
+					if resp.ReturnCodes[i] == 0x80 {
+						fmt.Printf("Subscription failed for topic %s\n", topic.Name)
+						continue
+					}
+					topic.QOS = resp.ReturnCodes[i]
+					c.Subscriptions[topic.Name] = topic.QOS
+				}
+			} else {
+				fmt.Printf("SubAck received, but packet %d is not a subscribe packet\n", id)
+			}
+		case UnsubAckPacket:
+			// When the ack is received, delete all our subscriptions from the local list.
+			if unsub, ok := originalPacket.(UnsubscribePacket); ok {
+				for _, topic := range unsub.Topics {
+					delete(c.Subscriptions, topic)
+				}
+			}
+		}
+		c.deleteInflight(id)
+	}
+}
+
+func (c *Client) addToInflight(packet Marshaller) {
+	if qosPacket, ok := packet.(QOSOutPacket); ok {
+		c.addInflight(qosPacket)
+	}
+}
+
 // ============================================================================
 
 func (c *Client) send(packet Marshaller) {
+	c.addToInflight(packet)
 	buf := packet.Marshall()
 	out := c.getSender()
 	out.send(buf)
@@ -269,7 +359,7 @@ func (c *Client) send(packet Marshaller) {
 // ============================================================================
 // sender setter / getter
 // TODO: Probably it is not needed as we probably do not need to really reset
-// sender on reconnect
+//   sender on reconnect
 
 // setSender is used to protect against race on reconnect.
 func (c *Client) setSender(sender sender) {
@@ -289,4 +379,21 @@ func (c *Client) getSender() sender {
 	}
 	c.mu.RUnlock()
 	return s
+}
+
+// Delete or remove packets from inflight packet queue
+func (c *Client) addInflight(p QOSOutPacket) {
+	c.mu.Lock()
+	{
+		c.inflight[p.PacketID()] = p
+	}
+	c.mu.Unlock()
+}
+
+func (c *Client) deleteInflight(id int) {
+	c.mu.Lock()
+	{
+		delete(c.inflight, id)
+	}
+	c.mu.Unlock()
 }

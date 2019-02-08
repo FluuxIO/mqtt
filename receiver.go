@@ -5,20 +5,31 @@ import (
 	"log"
 )
 
+type receiver struct {
+	// Connection to read the MQTT data from
+	conn io.Reader
+	// sender is the struct managing the go routine to send
+	sender sender
+	// Channel to send back message received (PUBLISH control packets) to the client using the library
+	messageChannel chan<- Message
+	// Channel to send back QOS packet (acks) to the internal client process.
+	qosChannel chan<- QOSResponse
+}
+
 // Receiver actually need:
 // - Net.conn
 // - Sender (to send ack packet when packets requiring acks are received)
 // - Error send channel to trigger teardown
 // - MessageSendChannel to dispatch messages to client
-
-func initReceiver(conn io.Reader, messageChannel chan<- Message, s sender) <-chan struct{} {
-	tearDown := make(chan struct{})
-	go receiver(conn, tearDown, messageChannel, s)
-	return tearDown
+// Returns teardown channel used to notify when the receiver terminates.
+func spawnReceiver(conn io.Reader, messageChannel chan<- Message, s sender) <-chan QOSResponse {
+	qosChannel := make(chan QOSResponse)
+	go receiverLoop(conn, qosChannel, messageChannel, s)
+	return qosChannel
 }
 
 // Receive, decode and dispatch messages to the message channel
-func receiver(conn io.Reader, tearDown chan<- struct{}, message chan<- Message, s sender) {
+func receiverLoop(conn io.Reader, qosChannel chan<- QOSResponse, message chan<- Message, s sender) {
 	var p Marshaller
 	var err error
 
@@ -43,12 +54,14 @@ Loop:
 			m.Payload = packetType.Payload
 			message <- m // TODO Back pressure. We may block on processing message if client does not read fast enough. Make sure we can quit.
 		default:
+			if ResponsePacket, ok := p.(QOSResponse); ok {
+				qosChannel <- ResponsePacket
+			}
 		}
 	}
 
-	// Loop ended, send tearDown signal and close tearDown channel
-	tearDown <- struct{}{}
-	close(tearDown)
+	// Loop ended, send receiver close signal
+	close(qosChannel)
 }
 
 // Send acks if needed, depending on packet QOS
