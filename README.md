@@ -11,6 +11,12 @@ The library has been tested with the following MQTT servers:
 - [fluux.io platform](https://fluux.io/)
 - [Mosquitto](https://mosquitto.org/)
 
+## Features
+
+- MQTT v3.1.1, QOS 0
+- Client manager to support auto-reconnect with exponential backoff.
+- TLS Support
+
 ## Short term tasks
 
 Implement support for QOS 1 and 2 (with storage backend interface and default backends).
@@ -23,7 +29,44 @@ You can launch unit tests with:
 
 ## Testing with Fluux public MQTT server
 
-We encourage you to experiment and test on a public Fluux test server. It is available on mqtt.fluux.io (on ports 1883 for cleartext and 8883 for TLS).
+We encourage you to experiment and test on a public Fluux test server. It is available on mqtt.fluux.io (on ports 1883
+for cleartext and 8883 for TLS).
+
+Here is example code for a simple client:
+
+```
+package main
+
+import (
+	"log"
+	"time"
+
+	"gosrc.io/mqtt"
+)
+
+func main() {
+	client := mqtt.NewClient("tls://mqtt.fluux.io:8883")
+	client.ClientID = "MQTT-Sub"
+	log.Printf("Connecting on: %s\n", client.Address)
+
+	messages := make(chan mqtt.Message)
+	client.Messages = messages
+
+	postConnect := func(c *mqtt.Client) {
+		log.Println("Connected")
+		name := "/mremond/test-topic-1"
+		topic := mqtt.Topic{Name: name, QOS: 0}
+		c.Subscribe(topic)
+	}
+
+	cm := mqtt.NewClientManager(client, postConnect)
+	cm.Start()
+
+	for m := range messages {
+		log.Printf("Received message from MQTT server on topic %s: %+v\n", m.Topic, m.Payload)
+	}
+}
+```
 
 ## Setting Mosquitto on OSX for testing
 

@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	client := mqtt.NewClient("localhost:1883")
+	client := mqtt.NewClient("tcp://localhost:1883")
 	client.ClientID = "mremond-osx"
 
 	if err := client.Connect(nil); err != nil {

@@ -2,9 +2,11 @@ package mqtt // import "gosrc.io/mqtt"
 
 import "C"
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -18,7 +20,7 @@ var (
 const (
 	// DefaultMQTTServer is a shortcut to define connection to local
 	// server
-	DefaultMQTTServer = "localhost:1883"
+	DefaultMQTTServer = "tcp://localhost:1883"
 )
 
 //=============================================================================
@@ -120,6 +122,8 @@ type Client struct {
 
 // New generates a new MQTT client with default parameters. Address
 // must be set as we cannot find relevant default value for server.
+// address is of the form tcp://hostname:port for cleartext connection
+// or tls://hostname:port for TLS connection.
 // TODO: Should messages channel be set on New ?
 func NewClient(address string) *Client {
 	return &Client{
@@ -222,12 +226,39 @@ Inflight: %v`, c.Subscriptions, c.inflight)
 // ============================================================================
 // Internal
 
-func (c *Client) connect() error {
-	conn, err := net.DialTimeout("tcp", c.Address, 5*time.Second)
+func (c *Client) connect() (err error) {
+	// Parse address string
+	uri, err := url.Parse(c.Address)
 	if err != nil {
 		return err
 	}
 
+	var conn net.Conn
+	switch uri.Scheme {
+	case "tcp":
+		conn, err = net.DialTimeout("tcp", uri.Host, 5*time.Second)
+		if err != nil {
+			return err
+		}
+		return c.login(conn)
+	case "tls":
+		conn, err = net.DialTimeout("tcp", uri.Host, 5*time.Second)
+		if err != nil {
+			return err
+		}
+		config := tls.Config{ServerName: uri.Hostname()}
+		tlsConn := tls.Client(conn, &config)
+		err = tlsConn.Handshake()
+		if err != nil {
+			return err
+		}
+		return c.login(tlsConn)
+	default:
+		return errors.New("url scheme must be tcp or tls")
+	}
+}
+
+func (c *Client) login(conn net.Conn) (err error) {
 	// 1. Open session - Login
 	// Send connect packet
 	connectPacket := ConnectPacket{ProtocolLevel: c.ProtocolLevel, ProtocolName: "MQTT"}
@@ -237,10 +268,11 @@ func (c *Client) connect() error {
 	connectPacket.Username = c.Username
 	connectPacket.Password = c.Password
 	buf := connectPacket.Marshall()
-	if _, err := conn.Write(buf); err != nil {
+	if _, err = conn.Write(buf); err != nil {
 		return err
 	}
 
+	// 2. Check login result
 	if err = conn.SetReadDeadline(time.Now().Add(c.ConnectTimeout)); err != nil {
 		return err
 	}
@@ -264,6 +296,7 @@ func (c *Client) connect() error {
 		return err
 	}
 
+	// 3. Configure sender and receiver
 	c.setSender(initSender(conn, c.Keepalive))
 	// Start routine to receive incoming data
 	receiverChannel := spawnReceiver(conn, c.Messages, c.sender)
