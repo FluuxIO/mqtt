@@ -88,7 +88,7 @@ func TestClient_KeepAliveDisable(t *testing.T) {
 const (
 	// Default port is not standard MQTT port to avoid interfering
 	// with local running MQTT server
-	testMQTTAddress = "localhost:10883"
+	testMQTTAddress = "tcp://localhost:10883"
 )
 
 type testHandler func(t *testing.T, conn net.Conn)
