@@ -237,7 +237,9 @@ func handlerUnauthorized(t *testing.T, c net.Conn) {
 		}
 		ack := mqtt.ConnAckPacket{ReturnCode: mqtt.ConnRefusedBadUsernameOrPassword}
 		buf := ack.Marshall()
-		c.Write(buf)
+		if _, err := c.Write(buf); err != nil {
+			log.Println(err)
+		}
 	default:
 	}
 	log.Println("Unauthorized handler done")
