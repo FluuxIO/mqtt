@@ -1,8 +1,10 @@
 package mqtt_test // import "gosrc.io/mqtt"
 
 import (
+	"errors"
 	"log"
 	"net"
+	"net/url"
 	"testing"
 	"time"
 
@@ -18,7 +20,10 @@ const (
 func TestClient_ConnectTimeout(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
-	mock.Start(t, func(t *testing.T, c net.Conn) { return })
+	if err := mock.Start(t, func(t *testing.T, c net.Conn) { return }); err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Test / Check result
 	client := mqtt.NewClient(testMQTTAddress)
@@ -37,7 +42,10 @@ func TestClient_ConnectTimeout(t *testing.T) {
 func TestClient_Connect(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
-	mock.Start(t, handlerConnackSuccess)
+	if err := mock.Start(t, handlerConnackSuccess); err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Test / Check result
 	client := mqtt.NewClient(testMQTTAddress)
@@ -53,7 +61,10 @@ func TestClient_Connect(t *testing.T) {
 func TestClient_Unauthorized(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
-	mock.Start(t, handlerUnauthorized)
+	if err := mock.Start(t, handlerUnauthorized); err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Test / Check result
 	client := mqtt.NewClient(testMQTTAddress)
@@ -69,7 +80,10 @@ func TestClient_Unauthorized(t *testing.T) {
 func TestClient_KeepAliveDisable(t *testing.T) {
 	// Setup Mock server
 	mock := MQTTServerMock{}
-	mock.Start(t, handlerConnackSuccess)
+	if err := mock.Start(t, handlerConnackSuccess); err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Test / Check result
 	client := mqtt.NewClient(testMQTTAddress)
@@ -102,20 +116,25 @@ type MQTTServerMock struct {
 	cleanup     chan struct{}
 }
 
-func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) {
+func (mock *MQTTServerMock) Start(t *testing.T, handler testHandler) error {
 	mock.t = t
 	mock.handler = handler
 	if err := mock.init(); err != nil {
-		return
+		return err
 	}
 	go mock.loop()
+	return nil
 }
 
 func (mock *MQTTServerMock) Stop() {
 	close(mock.done)
 
 	// Check that main MQTT mock server loop is actually terminated
-	<-mock.cleanup
+	select {
+	case <-mock.cleanup:
+	case <-time.After(5 * time.Second):
+		log.Println("timeout on MQTTServerMock cleanup")
+	}
 
 	// Shutdown server mock
 	if mock.listener != nil {
@@ -129,11 +148,26 @@ func (mock *MQTTServerMock) init() error {
 	mock.done = make(chan struct{})
 	mock.cleanup = make(chan struct{})
 
-	l, err := net.Listen("tcp", testMQTTAddress)
+	// Parse address string
+	uri, err := url.Parse(testMQTTAddress)
 	if err != nil {
-		mock.t.Errorf("mqttServerMock cannot listen on address: %s (%s)", testMQTTAddress, err)
 		return err
 	}
+
+	var l net.Listener
+	switch uri.Scheme {
+	case "tcp":
+		l, err = net.Listen("tcp", uri.Host)
+		if err != nil {
+			mock.t.Errorf("mqttServerMock cannot listen on tcp address: %s (%s)", uri.Host, err)
+			return err
+		}
+	case "tls":
+		return errors.New("mqttServerMock does not support TLS yet")
+	default:
+		return errors.New("mqttServerMock init error: url scheme must be tcp or tls")
+	}
+
 	mock.listener = l
 	return nil
 }
